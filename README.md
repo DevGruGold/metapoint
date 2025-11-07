@@ -1,73 +1,80 @@
-# Welcome to your Lovable project
+# Meta Point Advisors
 
-## Project info
+Global market insights and investment thought leadership by Maya Joelson. Meta Point Advisors provides differentiated investment insights, cutting through financial complexities and groupthink with a proven track record of staying ahead of market trends.
 
-**URL**: https://lovable.dev/projects/4161d8d4-e5c2-4b0f-b744-850b1e357275
+## About
 
-## How can I edit this code?
+Meta Point Advisors was founded by Marisa Joelson (known as Maya) after several years at Merrill Lynch in 2017. With two decades of experience advising CEOs, technology executives, hedge fund managers, families, and individuals on their investment decisions, Maya's differentiated ideas have been featured in the Wall Street Journal, Barron's, and at the World Economic Forum.
 
-There are several ways of editing your application.
+## Live Site
 
-**Use Lovable**
+**Production URL**: https://metapoint.vercel.app
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4161d8d4-e5c2-4b0f-b744-850b1e357275) and start prompting.
+## Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Newsletter**: Subscribe to The Meta Point newsletter for regular market insights and analysis
+- **Advisory Services**: Professional investment advisory services for institutional and individual clients
+- **Archive**: Access past newsletters and market commentary
+- **About**: Learn more about Maya Joelson's background and expertise
+- **Contact**: Get in touch for advisory services and inquiries
 
-**Use your preferred IDE**
+## Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This site is built with modern web technologies:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **React** - UI framework
+- **TypeScript** - Type-safe JavaScript
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Beautiful UI components
+- **React Router** - Client-side routing
+- **Supabase** - Backend and database
+- **Substack Integration** - Newsletter subscription and content delivery
 
-Follow these steps:
+## Development
+
+### Prerequisites
+
+- Node.js 18+ and npm
+
+### Setup
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone <repository-url>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to project directory
+cd <project-name>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The project uses Supabase for backend services. Environment variables are configured in `.env`:
 
-**Use GitHub Codespaces**
+```
+VITE_SUPABASE_PROJECT_ID=your-project-id
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+VITE_SUPABASE_URL=your-project-url
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Deployment
 
-## What technologies are used for this project?
+The site is deployed on Vercel with automatic deployments from the main branch.
 
-This project is built with:
+## Newsletter Integration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The site integrates with Substack for newsletter delivery and subscription management. Subscribe at [metapointadvisors.substack.com](https://metapointadvisors.substack.com).
 
-## How can I deploy this project?
+## Contact
 
-Simply open [Lovable](https://lovable.dev/projects/4161d8d4-e5c2-4b0f-b744-850b1e357275) and click on Share -> Publish.
+For advisory services or inquiries, visit the [Contact page](https://metapoint.vercel.app/contact) or email info@metapointadvisors.com.
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+© 2024 Meta Point Advisors. All rights reserved.
