@@ -19,7 +19,7 @@ const About = () => {
               <img
                 src={mayaImage}
                 alt="Maya Marisa Joelson"
-                className="rounded-full w-64 h-64 object-cover border-4 border-navy shadow-xl"
+                className="rounded-full w-64 h-64 object-cover object-[center_15%] border-4 border-navy shadow-xl"
               />
             </div>
 
