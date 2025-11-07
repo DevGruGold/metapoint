@@ -57,6 +57,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        navy: "hsl(var(--navy))",
+        orange: "hsl(var(--orange))",
+        "light-gray": "hsl(var(--light-gray))",
+      },
+      fontFamily: {
+        sans: ['Montserrat', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
