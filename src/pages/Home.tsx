@@ -49,14 +49,35 @@ const Home = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Latest Insights from The Meta Point
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredInsights.map((insight, index) => (
-              <NewsletterCard key={index} {...insight} link="/newsletter" />
-            ))}
+          
+          {/* Substack Subscribe Widget */}
+          <div className="max-w-md mx-auto mb-12 bg-white rounded-lg p-6 shadow-md">
+            <h3 className="text-xl font-semibold text-center mb-4">Subscribe to Our Newsletter</h3>
+            <iframe 
+              src="https://metapointadvisors.substack.com/embed" 
+              width="100%" 
+              height="320" 
+              style={{ border: '1px solid #EEE', background: 'white' }}
+              frameBorder="0" 
+              scrolling="no"
+              title="Subscribe to The Meta Point"
+            ></iframe>
           </div>
-          <div className="text-center mt-12">
+
+          <div className="text-center mb-8">
+            <a 
+              href="https://metapointadvisors.substack.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              <Button variant="orange" size="lg" className="mr-4">
+                Read on Substack
+              </Button>
+            </a>
             <Link to="/newsletter">
-              <Button variant="orange">View All Newsletter Articles</Button>
+              <Button variant="outline" size="lg">
+                Learn More
+              </Button>
             </Link>
           </div>
         </div>

@@ -58,21 +58,17 @@ const Subscribe = () => {
                 ))}
               </div>
 
-              {/* Substack Embed Placeholder */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                <h3 className="text-2xl font-bold mb-4">Subscribe to The Meta Point</h3>
-                <p className="text-muted-foreground mb-6">
-                  Connect your Substack publication to enable subscriptions
-                </p>
-                <Button variant="orange" size="lg" disabled>
-                  Substack Integration Coming Soon
-                </Button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  In the meantime, contact us at{" "}
-                  <a href="mailto:mmjoelson@gmail.com" className="text-orange hover:underline">
-                    mmjoelson@gmail.com
-                  </a>
-                </p>
+              {/* Substack Embed */}
+              <div className="rounded-lg overflow-hidden">
+                <iframe 
+                  src="https://metapointadvisors.substack.com/embed" 
+                  width="100%" 
+                  height="320" 
+                  style={{ border: '1px solid #EEE', background: 'white' }}
+                  frameBorder="0" 
+                  scrolling="no"
+                  title="Subscribe to The Meta Point"
+                ></iframe>
               </div>
             </div>
           </div>

@@ -80,24 +80,40 @@ const Newsletter = () => {
         </div>
       </section>
 
-      {/* Substack Embed Placeholder */}
+      {/* Substack Feed */}
       <section className="py-20 bg-light-gray">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">Recent Articles</h2>
-            <div className="bg-white rounded-lg p-8 shadow-md text-center mb-12">
-              <p className="text-muted-foreground mb-4">
-                Connect your Substack publication to display your newsletter feed here.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Substack integration coming soon
-              </p>
+            
+            {/* Substack Subscription Widget */}
+            <div className="bg-white rounded-lg p-8 shadow-md mb-12">
+              <h3 className="text-xl font-semibold text-center mb-6">Subscribe to The Meta Point</h3>
+              <div className="max-w-md mx-auto">
+                <iframe 
+                  src="https://metapointadvisors.substack.com/embed" 
+                  width="100%" 
+                  height="320" 
+                  style={{ border: '1px solid #EEE', background: 'white' }}
+                  frameBorder="0" 
+                  scrolling="no"
+                  title="Subscribe to The Meta Point"
+                ></iframe>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {sampleArticles.map((article, index) => (
-                <NewsletterCard key={index} {...article} />
-              ))}
+            {/* Link to Full Publication */}
+            <div className="text-center mb-12">
+              <p className="text-muted-foreground mb-4">
+                Read all articles on Substack
+              </p>
+              <a 
+                href="https://metapointadvisors.substack.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button variant="orange">Visit The Meta Point on Substack</Button>
+              </a>
             </div>
 
             <div className="text-center mt-12">

@@ -114,16 +114,24 @@ const Archive = () => {
         </div>
       </section>
 
-      {/* Integration Note */}
+      {/* Substack Archive Link */}
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="bg-light-gray rounded-lg p-8">
-              <h3 className="text-xl font-semibold mb-4">Full Archive Integration</h3>
-              <p className="text-muted-foreground">
-                Connect your Substack publication to automatically display your complete newsletter
-                archive with filtering and search capabilities.
+              <h3 className="text-xl font-semibold mb-4">View Complete Archive</h3>
+              <p className="text-muted-foreground mb-6">
+                Browse the complete collection of articles and insights on Substack.
               </p>
+              <a 
+                href="https://metapointadvisors.substack.com/archive" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button variant="orange" size="lg">
+                  View Full Archive on Substack
+                </Button>
+              </a>
             </div>
           </div>
         </div>
