@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import Youtube from '@tiptap/extension-youtube';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ import {
   Upload,
   Loader2,
   Library,
+  Video,
 } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -33,6 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import ImageCropModal from './ImageCropModal';
 
 interface RichTextEditorProps {
   content: string;
@@ -43,9 +46,13 @@ interface RichTextEditorProps {
 const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }: RichTextEditorProps) => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imageCaption, setImageCaption] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
@@ -90,6 +97,12 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
           class: 'rounded-lg',
         },
       }),
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        width: 640,
+        height: 360,
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -123,8 +136,8 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
       return null;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be less than 10MB');
       return null;
     }
 
@@ -154,15 +167,23 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
     }
   }, []);
 
+  const handleCroppedImage = useCallback(async (croppedFile: File) => {
+    const url = await uploadImage(croppedFile);
+    if (url) {
+      setImageUrl(url);
+      setImageDialogOpen(true);
+    }
+  }, [uploadImage]);
+
   const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const url = await uploadImage(file);
-    if (url) {
-      setImageUrl(url);
-    }
-  }, [uploadImage]);
+    // Open crop modal first
+    setPendingImageFile(file);
+    setCropModalOpen(true);
+    e.target.value = ''; // Reset input
+  }, []);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
@@ -172,13 +193,10 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
 
-    const url = await uploadImage(file);
-    if (url && editor) {
-      const imgHtml = `<img src="${url}" alt="Article image" />`;
-      editor.chain().focus().insertContent(imgHtml).run();
-      toast.success('Image uploaded and inserted');
-    }
-  }, [uploadImage, editor]);
+    // Open crop modal for dropped images too
+    setPendingImageFile(file);
+    setCropModalOpen(true);
+  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -202,6 +220,28 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
       setImageUrl('');
       setImageCaption('');
       setImageDialogOpen(false);
+    }
+  };
+
+  const addVideo = () => {
+    if (!videoUrl || !editor) {
+      toast.error('Please enter a video URL');
+      return;
+    }
+
+    try {
+      // Try to add as YouTube video first
+      editor.chain().focus().setYoutubeVideo({ src: videoUrl }).run();
+      setVideoUrl('');
+      setVideoDialogOpen(false);
+      toast.success('Video embedded successfully');
+    } catch (error) {
+      // If not YouTube, try as iframe embed
+      const iframeHtml = `<div class="video-container"><iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe></div>`;
+      editor.chain().focus().insertContent(iframeHtml).run();
+      setVideoUrl('');
+      setVideoDialogOpen(false);
+      toast.success('Video embedded successfully');
     }
   };
 
@@ -317,6 +357,15 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
           ) : (
             <ImageIcon className="h-4 w-4" />
           )}
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setVideoDialogOpen(true)}
+        >
+          <Video className="h-4 w-4" />
         </Button>
       </div>
       
@@ -474,6 +523,53 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={videoDialogOpen} onOpenChange={setVideoDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Embed Video</DialogTitle>
+            <DialogDescription>
+              Paste a YouTube, Vimeo, or other video embed URL
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="video-url">Video URL</Label>
+              <Input
+                id="video-url"
+                type="url"
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addVideo();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Supports YouTube, Vimeo, and iframe embed URLs
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVideoDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={addVideo} disabled={!videoUrl}>
+              Embed Video
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ImageCropModal
+        open={cropModalOpen}
+        onOpenChange={setCropModalOpen}
+        imageFile={pendingImageFile}
+        onCropComplete={handleCroppedImage}
+      />
     </div>
   );
 };

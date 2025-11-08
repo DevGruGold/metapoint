@@ -194,3 +194,39 @@ html {
   height: 0;
   pointer-events: none;
 }
+
+/* Video embeds */
+.prose iframe,
+.prose .video-container {
+  margin: 2rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.prose .video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+}
+
+.prose .video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* YouTube embeds from TipTap */
+.prose div[data-youtube-video] {
+  margin: 2rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.prose div[data-youtube-video] iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  margin: 0;
+}
