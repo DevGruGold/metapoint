@@ -1,11 +1,31 @@
+import { Helmet } from "react-helmet-async";
 import Hero from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import mayaImage from "@/assets/maya.jpg";
 
 const About = () => {
+  const canonicalUrl = `${window.location.origin}/about`;
+  
   return (
     <>
+      <Helmet>
+        <title>About Maya Joelson | Meta Point Advisors</title>
+        <meta name="description" content="Learn about Maya Marisa Joelson, founder of Meta Point Advisors. Two decades of experience advising CEOs, technology executives, and hedge fund managers on investment decisions." />
+        <link rel="canonical" href={canonicalUrl} />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content="About Maya Joelson | Meta Point Advisors" />
+        <meta property="og:description" content="Two decades of experience delivering global market insights and thought leadership" />
+        <meta property="og:image" content={`${window.location.origin}/og-image.jpg`} />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="About Maya Joelson | Meta Point Advisors" />
+        <meta name="twitter:description" content="Two decades of experience delivering global market insights and thought leadership" />
+        <meta name="twitter:image" content={`${window.location.origin}/og-image.jpg`} />
+      </Helmet>
+      
       <Hero
         title="About Meta Point Advisors"
         subtitle="Two decades of experience delivering global market insights and thought leadership"

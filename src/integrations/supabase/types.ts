@@ -22,6 +22,7 @@ export type Database = {
           created_by: string | null
           excerpt: string
           external_link: string | null
+          featured_image: string | null
           full_content: string
           id: string
           is_featured: boolean | null
@@ -37,6 +38,7 @@ export type Database = {
           created_by?: string | null
           excerpt: string
           external_link?: string | null
+          featured_image?: string | null
           full_content: string
           id?: string
           is_featured?: boolean | null
@@ -52,6 +54,7 @@ export type Database = {
           created_by?: string | null
           excerpt?: string
           external_link?: string | null
+          featured_image?: string | null
           full_content?: string
           id?: string
           is_featured?: boolean | null

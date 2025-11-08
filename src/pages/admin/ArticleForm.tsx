@@ -31,6 +31,7 @@ const ArticleForm = () => {
   const [publishedDate, setPublishedDate] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [externalLink, setExternalLink] = useState('');
+  const [featuredImage, setFeaturedImage] = useState('');
 
   const { data: article, isLoading } = useQuery({
     queryKey: ['article', id],
@@ -58,6 +59,7 @@ const ArticleForm = () => {
       setPublishedDate(article.published_date);
       setIsFeatured(article.is_featured);
       setExternalLink(article.external_link || '');
+      setFeaturedImage(article.featured_image || '');
     }
   }, [article]);
 
@@ -82,6 +84,7 @@ const ArticleForm = () => {
         published_date: publishedDate,
         is_featured: isFeatured,
         external_link: externalLink || null,
+        featured_image: featuredImage || null,
         created_by: user?.id,
       };
 
@@ -226,6 +229,20 @@ const ArticleForm = () => {
               onChange={setFullContent}
               placeholder="Write your article content with rich formatting..."
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="featuredImage">Featured Image (Social Sharing)</Label>
+            <Input
+              id="featuredImage"
+              type="url"
+              value={featuredImage}
+              onChange={(e) => setFeaturedImage(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+            />
+            <p className="text-xs text-muted-foreground">
+              Image used when article is shared on social media (1200x630px recommended). Leave blank to use default.
+            </p>
           </div>
 
           <div className="space-y-2">

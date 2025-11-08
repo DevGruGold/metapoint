@@ -1,9 +1,12 @@
+import { Helmet } from "react-helmet-async";
 import Hero from "@/components/Hero";
 import NewsletterCard from "@/components/NewsletterCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Newsletter = () => {
+  const canonicalUrl = `${window.location.origin}/newsletter`;
+  
   const sampleArticles = [
     {
       title: "Market Trends for Q1 2024",
@@ -33,6 +36,23 @@ const Newsletter = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Newsletter | Meta Point Advisors</title>
+        <meta name="description" content="Stay informed with weekly insights on global financial markets, geopolitical analysis, and investment strategy from Meta Point Advisors." />
+        <link rel="canonical" href={canonicalUrl} />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content="The Meta Point Newsletter" />
+        <meta property="og:description" content="Weekly insights on global financial markets, geopolitical analysis, and investment strategy" />
+        <meta property="og:image" content={`${window.location.origin}/og-image.jpg`} />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="The Meta Point Newsletter" />
+        <meta name="twitter:description" content="Weekly insights on global financial markets, geopolitical analysis, and investment strategy" />
+        <meta name="twitter:image" content={`${window.location.origin}/og-image.jpg`} />
+      </Helmet>
+      
       <Hero
         title="The Meta Point Newsletter"
         subtitle="Stay informed with weekly insights on global financial markets, geopolitical analysis, and investment strategy"

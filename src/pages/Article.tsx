@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, User, Tag, ExternalLink } from 'lucide-react';
@@ -63,8 +64,65 @@ const Article = () => {
     );
   }
 
+  const canonicalUrl = `${window.location.origin}/articles/${article.slug}`;
+  const ogImage = article.featured_image || `${window.location.origin}/og-image.jpg`;
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Helmet>
+        <title>{article.title} | Meta Point Advisors</title>
+        <meta name="description" content={article.excerpt} />
+        <link rel="canonical" href={canonicalUrl} />
+        
+        {/* Open Graph */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={article.excerpt} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:site_name" content="Meta Point Advisors" />
+        <meta property="article:published_time" content={article.published_date} />
+        <meta property="article:author" content={article.author} />
+        <meta property="article:section" content={article.category} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={canonicalUrl} />
+        <meta name="twitter:title" content={article.title} />
+        <meta name="twitter:description" content={article.excerpt} />
+        <meta name="twitter:image" content={ogImage} />
+        
+        {/* Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": article.title,
+            "description": article.excerpt,
+            "image": ogImage,
+            "datePublished": article.published_date,
+            "dateModified": article.updated_at,
+            "author": {
+              "@type": "Person",
+              "name": article.author
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Meta Point Advisors",
+              "logo": {
+                "@type": "ImageObject",
+                "url": `${window.location.origin}/favicon.png`
+              }
+            },
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": canonicalUrl
+            }
+          })}
+        </script>
+      </Helmet>
+      
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-to-br from-navy via-navy to-primary/20">
         <div className="container mx-auto px-4 py-12">
@@ -159,6 +217,7 @@ const Article = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
