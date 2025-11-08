@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
 import RichTextEditor from '@/components/RichTextEditor';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
+import { AIAssistantPanel } from '@/components/admin/AIAssistantPanel';
 
 const categories = ['Markets', 'Geopolitics', 'Economic Policy', 'Technology', 'Commentary'];
 
@@ -32,6 +33,7 @@ const ArticleForm = () => {
   const [isFeatured, setIsFeatured] = useState(false);
   const [externalLink, setExternalLink] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const { data: article, isLoading } = useQuery({
     queryKey: ['article', id],
@@ -139,14 +141,23 @@ const ArticleForm = () => {
   return (
     <AdminLayout>
       <div className="max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/admin/articles')}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Articles
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/admin/articles')}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Articles
+          </Button>
+          
+          <Button 
+            variant={showAIAssistant ? "default" : "outline"}
+            onClick={() => setShowAIAssistant(!showAIAssistant)}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            AI Assistant
+          </Button>
+        </div>
 
         <h1 className="text-3xl font-bold text-foreground mb-6">
           {isEditing ? 'Edit Article' : 'Create New Article'}
@@ -282,6 +293,20 @@ const ArticleForm = () => {
           </div>
         </form>
       </div>
+
+      {showAIAssistant && (
+        <AIAssistantPanel
+          onClose={() => setShowAIAssistant(false)}
+          onApplyTitle={setTitle}
+          onApplyContent={setFullContent}
+          onApplyCategory={setCategory}
+          onApplyExcerpt={setExcerpt}
+          onApplyDate={setPublishedDate}
+          onApplyAuthor={() => {}} // Author field not in this form
+          onApplyExternalLink={setExternalLink}
+          currentContent={fullContent}
+        />
+      )}
     </AdminLayout>
   );
 };

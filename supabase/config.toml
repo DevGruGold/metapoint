@@ -1,1 +1,10 @@
 project_id = "esozoaohiqeldippzxms"
+
+[functions.ai-story-assistant]
+verify_jwt = true
+
+[functions.ai-migrate-story]
+verify_jwt = true
+
+[functions.ai-format-story]
+verify_jwt = true
