@@ -20,6 +20,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import Articles from "./pages/admin/Articles";
 import ArticleForm from "./pages/admin/ArticleForm";
 import Users from "./pages/admin/Users";
+import MediaLibrary from "./pages/admin/MediaLibrary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,14 @@ const App = () => (
                   element={
                     <ProtectedRoute requireAdmin>
                       <Users />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/media" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <MediaLibrary />
                     </ProtectedRoute>
                   } 
                 />

@@ -11,7 +11,7 @@ interface HeroProps {
 const Hero = ({ title, subtitle, children, backgroundImage, overlay = true }: HeroProps) => {
   return (
     <section
-      className="relative py-24 md:py-32 flex items-center justify-center text-white"
+      className="relative py-12 md:py-16 flex items-center justify-center text-white"
       style={
         backgroundImage
           ? {

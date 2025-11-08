@@ -18,8 +18,10 @@ import {
   ListOrdered,
   Upload,
   Loader2,
+  Library,
 } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -45,6 +48,33 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
   const [imageCaption, setImageCaption] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+
+  const { data: libraryImages = [] } = useQuery({
+    queryKey: ['media-library-select'],
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from('article-images')
+        .list('', {
+          limit: 50,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' },
+        });
+
+      if (error) throw error;
+
+      return data.map((file) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('article-images')
+          .getPublicUrl(file.name);
+
+        return {
+          name: file.name,
+          url: publicUrl,
+        };
+      });
+    },
+    enabled: imageDialogOpen,
+  });
 
   const editor = useEditor({
     extensions: [
@@ -334,51 +364,90 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
       </Dialog>
 
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Insert Image</DialogTitle>
             <DialogDescription>
-              Upload an image or paste a URL
+              Upload a new image, select from library, or paste a URL
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="image-file">Upload Image</Label>
-              <div className="mt-2">
-                <Input
-                  id="image-file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  className="cursor-pointer"
-                />
-                {isUploading && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Uploading...
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="upload">Upload</TabsTrigger>
+              <TabsTrigger value="library">Library</TabsTrigger>
+              <TabsTrigger value="url">URL</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="upload" className="space-y-4 mt-4">
+              <div>
+                <Label htmlFor="image-file">Upload Image</Label>
+                <div className="mt-2">
+                  <Input
+                    id="image-file"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="cursor-pointer"
+                  />
+                  {isUploading && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="library" className="mt-4">
+              <div className="grid grid-cols-3 gap-4 max-h-[400px] overflow-y-auto p-1">
+                {libraryImages.length > 0 ? (
+                  libraryImages.map((img) => (
+                    <button
+                      key={img.name}
+                      onClick={() => setImageUrl(img.url)}
+                      className={`relative aspect-video rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                        imageUrl === img.url ? 'border-primary' : 'border-border'
+                      }`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {imageUrl === img.url && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="bg-primary text-primary-foreground rounded-full p-2">
+                            ✓
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <div className="col-span-3 text-center py-8 text-muted-foreground">
+                    No images in library. Upload some first!
                   </div>
                 )}
               </div>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+            </TabsContent>
+
+            <TabsContent value="url" className="space-y-4 mt-4">
+              <div>
+                <Label htmlFor="image-url">Image URL</Label>
+                <Input
+                  id="image-url"
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or paste URL</span>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="image-url">Image URL</Label>
-              <Input
-                id="image-url"
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-            </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="space-y-4 mt-4">
             <div>
               <Label htmlFor="image-caption">Caption (Optional)</Label>
               <Input

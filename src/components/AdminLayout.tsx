@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Users, LayoutDashboard } from 'lucide-react';
+import { Home, FileText, Users, LayoutDashboard, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
@@ -12,6 +12,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navItems = [
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/articles', label: 'Articles', icon: FileText },
+    { path: '/admin/media', label: 'Media Library', icon: Image },
     { path: '/admin/users', label: 'Users', icon: Users },
   ];
 

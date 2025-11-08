@@ -37,7 +37,7 @@ const Archive = () => {
         subtitle="Explore our complete collection of market insights and investment analysis"
       />
 
-      <section className="py-20 bg-light-gray">
+      <section className="py-10 bg-light-gray">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             {/* Search Bar */}

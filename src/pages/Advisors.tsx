@@ -52,7 +52,7 @@ const Advisors = () => {
       />
 
       {/* Services Section */}
-      <section className="py-20 bg-background">
+      <section className="py-10 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">Services We Offer</h2>

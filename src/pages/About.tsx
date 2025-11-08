@@ -12,7 +12,7 @@ const About = () => {
       />
 
       {/* Main Bio Section */}
-      <section className="py-20 bg-background">
+      <section className="py-10 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-center mb-12">

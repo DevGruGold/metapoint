@@ -55,7 +55,7 @@ const Contact = () => {
     <>
       <Hero title="Get in Touch" subtitle="We'd love to hear from you" />
 
-      <section className="py-20 bg-light-gray">
+      <section className="py-10 bg-light-gray">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
             {/* Contact Form */}
