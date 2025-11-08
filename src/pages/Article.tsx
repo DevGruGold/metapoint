@@ -112,9 +112,10 @@ const Article = () => {
 
           {/* Full Content */}
           <div className="prose prose-lg max-w-none mb-12">
-            <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-              {article.full_content}
-            </div>
+            <div 
+              className="text-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: article.full_content }}
+            />
           </div>
 
           {/* External Link */}

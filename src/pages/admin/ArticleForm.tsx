@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
+import RichTextEditor from '@/components/RichTextEditor';
 import { ArrowLeft } from 'lucide-react';
 
 const categories = ['Markets', 'Geopolitics', 'Economic Policy', 'Technology', 'Commentary'];
@@ -220,13 +221,10 @@ const ArticleForm = () => {
 
           <div className="space-y-2">
             <Label htmlFor="fullContent">Full Content *</Label>
-            <Textarea
-              id="fullContent"
-              value={fullContent}
-              onChange={(e) => setFullContent(e.target.value)}
-              placeholder="Full article content"
-              rows={15}
-              required
+            <RichTextEditor
+              content={fullContent}
+              onChange={setFullContent}
+              placeholder="Write your article content with rich formatting..."
             />
           </div>
 
