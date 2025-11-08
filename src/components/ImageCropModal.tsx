@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Loader2, Maximize2, Minimize2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 
 interface ImageCropModalProps {
   open: boolean;
@@ -28,13 +28,17 @@ const ImageCropModal = ({ open, onOpenChange, imageFile, onCropComplete }: Image
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [scale, setScale] = useState(1);
   const [maxWidth, setMaxWidth] = useState(1920);
+  const [quality, setQuality] = useState(0.9);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [originalSize, setOriginalSize] = useState<number>(0);
+  const [compressedSize, setCompressedSize] = useState<number>(0);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imageSrc, setImageSrc] = useState<string>('');
 
   // Load image when file changes
   useState(() => {
     if (imageFile && open) {
+      setOriginalSize(imageFile.size);
       const reader = new FileReader();
       reader.onload = () => {
         setImageSrc(reader.result as string);
@@ -58,7 +62,7 @@ const ImageCropModal = ({ open, onOpenChange, imageFile, onCropComplete }: Image
   }, []);
 
   const getCroppedImg = useCallback(
-    async (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
+    async (image: HTMLImageElement, crop: PixelCrop, compressionQuality: number): Promise<Blob> => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -106,12 +110,31 @@ const ImageCropModal = ({ open, onOpenChange, imageFile, onCropComplete }: Image
             resolve(blob);
           },
           'image/jpeg',
-          0.9
+          compressionQuality
         );
       });
     },
     [maxWidth]
   );
+
+  // Update compressed size preview when quality changes
+  const updateCompressedSizePreview = useCallback(async () => {
+    if (!completedCrop || !imgRef.current) return;
+    
+    try {
+      const previewBlob = await getCroppedImg(imgRef.current, completedCrop, quality);
+      setCompressedSize(previewBlob.size);
+    } catch (error) {
+      console.error('Error calculating compressed size:', error);
+    }
+  }, [completedCrop, quality, getCroppedImg]);
+
+  // Update preview when quality or crop changes
+  useState(() => {
+    if (completedCrop && imgRef.current) {
+      updateCompressedSizePreview();
+    }
+  });
 
   const handleCropApply = async () => {
     if (!completedCrop || !imgRef.current || !imageFile) {
@@ -121,13 +144,14 @@ const ImageCropModal = ({ open, onOpenChange, imageFile, onCropComplete }: Image
 
     setIsProcessing(true);
     try {
-      const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
+      const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop, quality);
       const croppedFile = new File([croppedImageBlob], imageFile.name, {
         type: 'image/jpeg',
       });
       
+      const compressionPercent = ((1 - croppedImageBlob.size / originalSize) * 100).toFixed(0);
       onCropComplete(croppedFile);
-      toast.success('Image optimized successfully');
+      toast.success(`Image optimized! Reduced by ${compressionPercent}%`);
       onOpenChange(false);
     } catch (error) {
       console.error('Error cropping image:', error);
@@ -266,6 +290,54 @@ const ImageCropModal = ({ open, onOpenChange, imageFile, onCropComplete }: Image
                 Images wider than this will be resized. Recommended: 1920px for full-width images, 1200px for content images.
               </p>
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Compression Quality: {(quality * 100).toFixed(0)}%</Label>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Info className="w-3 h-3" />
+                  <span>Higher = Better quality, larger file</span>
+                </div>
+              </div>
+              <Slider
+                value={[quality]}
+                onValueChange={([value]) => setQuality(value)}
+                min={0.5}
+                max={1}
+                step={0.05}
+                className="mt-2"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                <span>Lower quality</span>
+                <span>Higher quality</span>
+              </div>
+            </div>
+
+            {/* File Size Info */}
+            {originalSize > 0 && (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Original size:</span>
+                  <span className="font-medium">{(originalSize / 1024 / 1024).toFixed(2)} MB</span>
+                </div>
+                {compressedSize > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Compressed size:</span>
+                      <span className="font-medium text-primary">
+                        {(compressedSize / 1024 / 1024).toFixed(2)} MB
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Reduction:</span>
+                      <span className="font-medium text-green-600">
+                        {((1 - compressedSize / originalSize) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
