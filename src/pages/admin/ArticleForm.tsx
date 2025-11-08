@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
 import RichTextEditor from '@/components/RichTextEditor';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, Eye } from 'lucide-react';
 import { AIAssistantPanel } from '@/components/admin/AIAssistantPanel';
+import { ArticlePreview } from '@/components/admin/ArticlePreview';
 
 const categories = ['Markets', 'Geopolitics', 'Economic Policy', 'Technology', 'Commentary'];
 
@@ -34,6 +35,7 @@ const ArticleForm = () => {
   const [externalLink, setExternalLink] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [metaDescription, setMetaDescription] = useState('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [focusKeyword, setFocusKeyword] = useState('');
@@ -160,14 +162,26 @@ const ArticleForm = () => {
             Back to Articles
           </Button>
           
-          <Button 
-            variant={showAIAssistant ? "default" : "outline"}
-            onClick={() => setShowAIAssistant(!showAIAssistant)}
-            className="w-full sm:w-auto"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            AI Assistant
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button 
+              variant="outline"
+              onClick={() => setShowPreview(true)}
+              className="w-full sm:w-auto"
+              type="button"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+            <Button 
+              variant={showAIAssistant ? "default" : "outline"}
+              onClick={() => setShowAIAssistant(!showAIAssistant)}
+              className="w-full sm:w-auto"
+              type="button"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              AI Assistant
+            </Button>
+          </div>
         </div>
 
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
@@ -370,6 +384,18 @@ const ArticleForm = () => {
           currentTitle={title}
           currentExcerpt={excerpt}
           currentCategory={category}
+        />
+      )}
+
+      {showPreview && (
+        <ArticlePreview
+          title={title}
+          excerpt={excerpt}
+          content={fullContent}
+          category={category}
+          publishedDate={publishedDate}
+          featuredImage={featuredImage}
+          onClose={() => setShowPreview(false)}
         />
       )}
     </AdminLayout>

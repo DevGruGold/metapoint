@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminLayout from '@/components/AdminLayout';
-import { Trash2, Copy, ExternalLink, Upload, Loader2, Search } from 'lucide-react';
+import { Trash2, Copy, ExternalLink, Upload, Loader2, Search, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,8 @@ const MediaLibrary = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteImagePath, setDeleteImagePath] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: images = [], isLoading } = useQuery({
@@ -69,10 +72,7 @@ const MediaLibrary = () => {
     },
   });
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
@@ -96,13 +96,44 @@ const MediaLibrary = () => {
 
       queryClient.invalidateQueries({ queryKey: ['media-library'] });
       toast.success('Image uploaded successfully');
-      e.target.value = '';
     } catch (error: any) {
       toast.error(error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);
     }
   };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadFile(file);
+    e.target.value = '';
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    // Upload first file only
+    await uploadFile(files[0]);
+  }, []);
 
   const copyToClipboard = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -122,16 +153,33 @@ const MediaLibrary = () => {
 
   return (
     <AdminLayout>
-      <div>
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className="relative"
+      >
+        {/* Drag Overlay */}
+        {isDragging && (
+          <div className="fixed inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-card border-2 border-dashed border-primary rounded-lg p-12 text-center">
+              <ImagePlus className="w-16 h-16 mx-auto mb-4 text-primary" />
+              <p className="text-xl font-semibold mb-2">Drop your image here</p>
+              <p className="text-muted-foreground">Images up to 5MB supported</p>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Media Library</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Media Library</h1>
             <p className="text-muted-foreground mt-2">
-              Manage and organize your article images
+              Drag & drop images or click upload • Max 5MB per image
             </p>
           </div>
           <div className="flex gap-3">
             <Input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleUpload}
@@ -186,7 +234,7 @@ const MediaLibrary = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : filteredImages.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {filteredImages.map((image) => (
               <div
                 key={image.name}
@@ -243,13 +291,19 @@ const MediaLibrary = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
+          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <ImagePlus className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground mb-4">
               {searchTerm ? 'No images found matching your search.' : 'No images uploaded yet.'}
             </p>
-            {searchTerm && (
+            {searchTerm ? (
               <Button variant="link" onClick={() => setSearchTerm('')}>
                 Clear search
+              </Button>
+            ) : (
+              <Button onClick={() => fileInputRef.current?.click()}>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Your First Image
               </Button>
             )}
           </div>
