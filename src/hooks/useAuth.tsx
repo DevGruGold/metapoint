@@ -12,7 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  checkAdminRole: () => Promise<boolean>;
+  checkAdminRole: (userId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,13 +24,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const checkAdminRole = async () => {
-    if (!user) return false;
-    
+  const checkAdminRole = async (userId: string) => {
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('role', 'admin')
       .maybeSingle();
     
@@ -52,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Defer admin check to avoid blocking
         if (session?.user) {
           setTimeout(async () => {
-            const isAdminUser = await checkAdminRole();
+            const isAdminUser = await checkAdminRole(session.user.id);
             setIsAdmin(isAdminUser);
           }, 0);
         } else {
@@ -68,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (session?.user) {
         setTimeout(async () => {
-          const isAdminUser = await checkAdminRole();
+          const isAdminUser = await checkAdminRole(session.user.id);
           setIsAdmin(isAdminUser);
           setLoading(false);
         }, 0);
@@ -78,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string) => {
     try {
