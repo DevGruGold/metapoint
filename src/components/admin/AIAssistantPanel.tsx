@@ -21,7 +21,13 @@ interface AIAssistantPanelProps {
   onApplyDate: (date: string) => void;
   onApplyAuthor: (author: string) => void;
   onApplyExternalLink: (link: string) => void;
+  onApplyMetaDescription: (desc: string) => void;
+  onApplyKeywords: (keywords: string[]) => void;
+  onApplyFocusKeyword: (keyword: string) => void;
   currentContent: string;
+  currentTitle: string;
+  currentExcerpt: string;
+  currentCategory: string;
 }
 
 export const AIAssistantPanel = ({
@@ -33,7 +39,13 @@ export const AIAssistantPanel = ({
   onApplyDate,
   onApplyAuthor,
   onApplyExternalLink,
-  currentContent
+  onApplyMetaDescription,
+  onApplyKeywords,
+  onApplyFocusKeyword,
+  currentContent,
+  currentTitle,
+  currentExcerpt,
+  currentCategory
 }: AIAssistantPanelProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -56,6 +68,9 @@ export const AIAssistantPanel = ({
     addAccessibility: true
   });
   const [formattedData, setFormattedData] = useState<any>(null);
+
+  // SEO Optimizer state
+  const [seoAnalysis, setSeoAnalysis] = useState<any>(null);
 
   const handleGenerateIdeas = async () => {
     if (!topic.trim()) {
@@ -185,6 +200,48 @@ export const AIAssistantPanel = ({
     });
   };
 
+  const handleAnalyzeSEO = async () => {
+    if (!currentTitle || !currentContent || currentContent.trim() === '<p></p>') {
+      toast({
+        title: "Content required",
+        description: "Please add a title and content before analyzing SEO",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setSeoAnalysis(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-seo-optimizer', {
+        body: { 
+          title: currentTitle,
+          content: currentContent,
+          excerpt: currentExcerpt,
+          category: currentCategory
+        }
+      });
+
+      if (error) throw error;
+
+      setSeoAnalysis(data);
+      toast({
+        title: "SEO analysis complete!",
+        description: "Review the recommendations below",
+      });
+    } catch (error: any) {
+      console.error('Error analyzing SEO:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to analyze SEO",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="fixed right-0 top-0 h-screen w-[500px] bg-background border-l shadow-2xl z-50 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
@@ -198,10 +255,11 @@ export const AIAssistantPanel = ({
       </div>
 
       <Tabs defaultValue="ideas" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 m-4">
+        <TabsList className="grid w-full grid-cols-4 m-4">
           <TabsTrigger value="ideas">Ideas</TabsTrigger>
           <TabsTrigger value="migrate">Migrate</TabsTrigger>
           <TabsTrigger value="format">Format</TabsTrigger>
+          <TabsTrigger value="seo">SEO</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="flex-1">
@@ -521,6 +579,210 @@ export const AIAssistantPanel = ({
                     >
                       Apply Formatting
                     </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* SEO Optimizer Tab */}
+            <TabsContent value="seo" className="mt-0 space-y-4">
+              <div className="space-y-4">
+                <div className="bg-muted/50 p-3 rounded-md">
+                  <p className="text-sm text-muted-foreground">
+                    AI will analyze your current article content and provide comprehensive SEO recommendations including meta descriptions, keywords, and structure improvements.
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={handleAnalyzeSEO} 
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing SEO...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Analyze SEO
+                    </>
+                  )}
+                </Button>
+
+                {seoAnalysis && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                    {/* Meta Description */}
+                    <Card className="p-4 space-y-3">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        Meta Description
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {seoAnalysis.metaDescription}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Length: {seoAnalysis.metaDescription?.length || 0} characters
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onApplyMetaDescription(seoAnalysis.metaDescription);
+                          toast({ title: "Meta description applied!" });
+                        }}
+                      >
+                        Apply Meta Description
+                      </Button>
+                    </Card>
+
+                    {/* Focus Keyword */}
+                    <Card className="p-4 space-y-3">
+                      <h3 className="font-semibold">Focus Keyword</h3>
+                      <p className="text-sm font-mono bg-muted px-2 py-1 rounded inline-block">
+                        {seoAnalysis.focusKeyword}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onApplyFocusKeyword(seoAnalysis.focusKeyword);
+                          toast({ title: "Focus keyword applied!" });
+                        }}
+                      >
+                        Apply Focus Keyword
+                      </Button>
+                    </Card>
+
+                    {/* Keywords */}
+                    <Card className="p-4 space-y-3">
+                      <h3 className="font-semibold">Related Keywords</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {seoAnalysis.keywords?.map((keyword: string, idx: number) => (
+                          <span key={idx} className="text-xs bg-muted px-2 py-1 rounded">
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onApplyKeywords(seoAnalysis.keywords);
+                          toast({ title: "Keywords applied!" });
+                        }}
+                      >
+                        Apply All Keywords
+                      </Button>
+                    </Card>
+
+                    {/* Title Suggestions */}
+                    {seoAnalysis.titleSuggestions && (
+                      <Card className="p-4 space-y-3">
+                        <h3 className="font-semibold">SEO-Optimized Titles</h3>
+                        <div className="space-y-2">
+                          {seoAnalysis.titleSuggestions?.map((title: string, idx: number) => (
+                            <Button
+                              key={idx}
+                              variant="outline"
+                              className="w-full justify-start text-left h-auto py-3"
+                              onClick={() => {
+                                onApplyTitle(title);
+                                toast({ title: "Title applied!" });
+                              }}
+                            >
+                              <span className="text-sm">{title}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Structure Analysis */}
+                    <Card className="p-4 space-y-3">
+                      <h3 className="font-semibold">Content Structure</h3>
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm font-medium">Score: {seoAnalysis.structureAnalysis?.score}/100</p>
+                        </div>
+                        {seoAnalysis.structureAnalysis?.strengths?.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-green-600">Strengths:</p>
+                            <ul className="list-disc list-inside text-sm text-muted-foreground">
+                              {seoAnalysis.structureAnalysis.strengths.map((item: string, idx: number) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {seoAnalysis.structureAnalysis?.improvements?.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-orange-600">Improvements:</p>
+                            <ul className="list-disc list-inside text-sm text-muted-foreground">
+                              {seoAnalysis.structureAnalysis.improvements.map((item: string, idx: number) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+
+                    {/* Readability */}
+                    <Card className="p-4 space-y-3">
+                      <h3 className="font-semibold">Readability</h3>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="font-medium">Score:</span> {seoAnalysis.readability?.score}/100</p>
+                        <p><span className="font-medium">Grade:</span> {seoAnalysis.readability?.grade}</p>
+                        {seoAnalysis.readability?.suggestions?.length > 0 && (
+                          <div>
+                            <p className="font-medium">Suggestions:</p>
+                            <ul className="list-disc list-inside text-muted-foreground">
+                              {seoAnalysis.readability.suggestions.map((item: string, idx: number) => (
+                                <li key={idx}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+
+                    {/* Keyword Density */}
+                    {seoAnalysis.keywordDensity && (
+                      <Card className="p-4 space-y-3">
+                        <h3 className="font-semibold">Keyword Density</h3>
+                        <div className="space-y-2 text-sm">
+                          <p><span className="font-medium">Primary keyword:</span> {seoAnalysis.keywordDensity.primary}</p>
+                          <p><span className="font-medium">Assessment:</span> {seoAnalysis.keywordDensity.assessment}</p>
+                          <p className="text-muted-foreground">{seoAnalysis.keywordDensity.recommendation}</p>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Internal Links */}
+                    {seoAnalysis.internalLinkSuggestions?.length > 0 && (
+                      <Card className="p-4 space-y-3">
+                        <h3 className="font-semibold">Internal Linking Opportunities</h3>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                          {seoAnalysis.internalLinkSuggestions.map((topic: string, idx: number) => (
+                            <li key={idx}>{topic}</li>
+                          ))}
+                        </ul>
+                      </Card>
+                    )}
+
+                    {/* Content Gaps */}
+                    {seoAnalysis.contentGaps?.length > 0 && (
+                      <Card className="p-4 space-y-3">
+                        <h3 className="font-semibold">Content Gaps to Address</h3>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                          {seoAnalysis.contentGaps.map((gap: string, idx: number) => (
+                            <li key={idx}>{gap}</li>
+                          ))}
+                        </ul>
+                      </Card>
+                    )}
                   </div>
                 )}
               </div>

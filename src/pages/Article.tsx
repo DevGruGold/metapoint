@@ -66,19 +66,22 @@ const Article = () => {
 
   const canonicalUrl = `${window.location.origin}/articles/${article.slug}`;
   const ogImage = article.featured_image || `${window.location.origin}/og-image.jpg`;
+  const metaDescription = article.meta_description || article.excerpt;
+  const keywords = article.keywords?.join(', ') || `${article.category}, Meta Point Advisors, Economic Analysis`;
 
   return (
     <>
       <Helmet>
         <title>{article.title} | Meta Point Advisors</title>
-        <meta name="description" content={article.excerpt} />
+        <meta name="description" content={metaDescription} />
+        {article.focus_keyword && <meta name="keywords" content={keywords} />}
         <link rel="canonical" href={canonicalUrl} />
         
         {/* Open Graph */}
         <meta property="og:type" content="article" />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:title" content={article.title} />
-        <meta property="og:description" content={article.excerpt} />
+        <meta property="og:description" content={metaDescription} />
         <meta property="og:image" content={ogImage} />
         <meta property="og:site_name" content="Meta Point Advisors" />
         <meta property="article:published_time" content={article.published_date} />
@@ -89,7 +92,7 @@ const Article = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={canonicalUrl} />
         <meta name="twitter:title" content={article.title} />
-        <meta name="twitter:description" content={article.excerpt} />
+        <meta name="twitter:description" content={metaDescription} />
         <meta name="twitter:image" content={ogImage} />
         
         {/* Structured Data */}
@@ -98,7 +101,7 @@ const Article = () => {
             "@context": "https://schema.org",
             "@type": "Article",
             "headline": article.title,
-            "description": article.excerpt,
+            "description": metaDescription,
             "image": ogImage,
             "datePublished": article.published_date,
             "dateModified": article.updated_at,
@@ -117,7 +120,8 @@ const Article = () => {
             "mainEntityOfPage": {
               "@type": "WebPage",
               "@id": canonicalUrl
-            }
+            },
+            ...(article.keywords && article.keywords.length > 0 ? { "keywords": article.keywords.join(', ') } : {})
           })}
         </script>
       </Helmet>

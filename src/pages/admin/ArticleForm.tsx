@@ -34,6 +34,9 @@ const ArticleForm = () => {
   const [externalLink, setExternalLink] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [metaDescription, setMetaDescription] = useState('');
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [focusKeyword, setFocusKeyword] = useState('');
 
   const { data: article, isLoading } = useQuery({
     queryKey: ['article', id],
@@ -62,6 +65,9 @@ const ArticleForm = () => {
       setIsFeatured(article.is_featured);
       setExternalLink(article.external_link || '');
       setFeaturedImage(article.featured_image || '');
+      setMetaDescription(article.meta_description || '');
+      setKeywords(article.keywords || []);
+      setFocusKeyword(article.focus_keyword || '');
     }
   }, [article]);
 
@@ -87,6 +93,9 @@ const ArticleForm = () => {
         is_featured: isFeatured,
         external_link: externalLink || null,
         featured_image: featuredImage || null,
+        meta_description: metaDescription || null,
+        keywords: keywords.length > 0 ? keywords : null,
+        focus_keyword: focusKeyword || null,
         created_by: user?.id,
       };
 
@@ -270,6 +279,53 @@ const ArticleForm = () => {
             </p>
           </div>
 
+          {/* SEO Fields */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="text-lg font-semibold mb-4">SEO Settings</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea
+                  id="metaDescription"
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  placeholder="Brief description for search engines (150-160 characters recommended)"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {metaDescription.length} / 160 characters {metaDescription.length > 160 && '(too long)'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="focusKeyword">Focus Keyword</Label>
+                <Input
+                  id="focusKeyword"
+                  value={focusKeyword}
+                  onChange={(e) => setFocusKeyword(e.target.value)}
+                  placeholder="e.g., China economic policy"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Primary keyword to optimize for
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="keywords">Keywords (comma-separated)</Label>
+                <Input
+                  id="keywords"
+                  value={keywords.join(', ')}
+                  onChange={(e) => setKeywords(e.target.value.split(',').map(k => k.trim()).filter(k => k))}
+                  placeholder="e.g., trade policy, market analysis, investment"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Related keywords for SEO ({keywords.length} keywords)
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center space-x-2">
             <Switch
               id="featured"
@@ -304,7 +360,13 @@ const ArticleForm = () => {
           onApplyDate={setPublishedDate}
           onApplyAuthor={() => {}} // Author field not in this form
           onApplyExternalLink={setExternalLink}
+          onApplyMetaDescription={setMetaDescription}
+          onApplyKeywords={setKeywords}
+          onApplyFocusKeyword={setFocusKeyword}
           currentContent={fullContent}
+          currentTitle={title}
+          currentExcerpt={excerpt}
+          currentCategory={category}
         />
       )}
     </AdminLayout>

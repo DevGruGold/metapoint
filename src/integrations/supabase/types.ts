@@ -23,9 +23,12 @@ export type Database = {
           excerpt: string
           external_link: string | null
           featured_image: string | null
+          focus_keyword: string | null
           full_content: string
           id: string
           is_featured: boolean | null
+          keywords: string[] | null
+          meta_description: string | null
           published_date: string
           slug: string
           title: string
@@ -39,9 +42,12 @@ export type Database = {
           excerpt: string
           external_link?: string | null
           featured_image?: string | null
+          focus_keyword?: string | null
           full_content: string
           id?: string
           is_featured?: boolean | null
+          keywords?: string[] | null
+          meta_description?: string | null
           published_date: string
           slug: string
           title: string
@@ -55,9 +61,12 @@ export type Database = {
           excerpt?: string
           external_link?: string | null
           featured_image?: string | null
+          focus_keyword?: string | null
           full_content?: string
           id?: string
           is_featured?: boolean | null
+          keywords?: string[] | null
+          meta_description?: string | null
           published_date?: string
           slug?: string
           title?: string

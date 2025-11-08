@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.ai-format-story]
 verify_jwt = true
+
+[functions.ai-seo-optimizer]
+verify_jwt = true
