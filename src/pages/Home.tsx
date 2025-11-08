@@ -144,7 +144,7 @@ const Home = () => {
               <img
                 src={mayaImage}
                 alt="Maya Joelson"
-                className="rounded-full w-64 h-64 md:w-80 md:h-80 object-cover object-[center_15%] border-4 border-white shadow-xl"
+                className="rounded-full w-64 h-64 md:w-80 md:h-80 object-cover object-[center_20%] md:object-[center_15%] border-4 border-white shadow-xl"
               />
             </div>
           </div>

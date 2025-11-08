@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Loader2, X, ExternalLink, CheckCircle2, Lightbulb } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface AIAssistantPanelProps {
   onClose: () => void;
@@ -49,6 +51,7 @@ export const AIAssistantPanel = ({
 }: AIAssistantPanelProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   // Story Ideas state
   const [topic, setTopic] = useState('');
@@ -242,8 +245,8 @@ export const AIAssistantPanel = ({
     }
   };
 
-  return (
-    <div className="fixed right-0 top-0 h-screen w-[500px] bg-background border-l shadow-2xl z-50 flex flex-col">
+  const panelContent = (
+    <>
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
@@ -256,10 +259,10 @@ export const AIAssistantPanel = ({
 
       <Tabs defaultValue="ideas" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-4 m-4">
-          <TabsTrigger value="ideas">Ideas</TabsTrigger>
-          <TabsTrigger value="migrate">Migrate</TabsTrigger>
-          <TabsTrigger value="format">Format</TabsTrigger>
-          <TabsTrigger value="seo">SEO</TabsTrigger>
+          <TabsTrigger value="ideas" className="text-xs sm:text-sm">Ideas</TabsTrigger>
+          <TabsTrigger value="migrate" className="text-xs sm:text-sm">Migrate</TabsTrigger>
+          <TabsTrigger value="format" className="text-xs sm:text-sm">Format</TabsTrigger>
+          <TabsTrigger value="seo" className="text-xs sm:text-sm">SEO</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="flex-1">
@@ -790,6 +793,22 @@ export const AIAssistantPanel = ({
           </div>
         </ScrollArea>
       </Tabs>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={true} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col">
+          {panelContent}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div className="fixed right-0 top-0 h-screen w-[500px] bg-background border-l shadow-2xl z-50 flex flex-col">
+      {panelContent}
     </div>
   );
 };

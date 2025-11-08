@@ -149,11 +149,12 @@ const ArticleForm = () => {
 
   return (
     <AdminLayout>
-      <div className="max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate('/admin/articles')}
+            className="self-start"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Articles
@@ -162,13 +163,14 @@ const ArticleForm = () => {
           <Button 
             variant={showAIAssistant ? "default" : "outline"}
             onClick={() => setShowAIAssistant(!showAIAssistant)}
+            className="w-full sm:w-auto"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             AI Assistant
           </Button>
         </div>
 
-        <h1 className="text-3xl font-bold text-foreground mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
           {isEditing ? 'Edit Article' : 'Create New Article'}
         </h1>
 
@@ -198,7 +200,7 @@ const ArticleForm = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
               <Select value={category} onValueChange={setCategory} required>
@@ -335,14 +337,15 @@ const ArticleForm = () => {
             <Label htmlFor="featured">Featured (show on homepage)</Label>
           </div>
 
-          <div className="flex gap-4">
-            <Button type="submit" disabled={saveMutation.isPending}>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button type="submit" disabled={saveMutation.isPending} className="w-full sm:w-auto">
               {saveMutation.isPending ? 'Saving...' : isEditing ? 'Update Article' : 'Create Article'}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate('/admin/articles')}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>

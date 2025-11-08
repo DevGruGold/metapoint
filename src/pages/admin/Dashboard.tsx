@@ -39,10 +39,10 @@ const Dashboard = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <Link to="/admin/articles/new">
-            <Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
+          <Link to="/admin/articles/new" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Article
             </Button>

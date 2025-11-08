@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -68,47 +69,101 @@ const Users = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-foreground">Users</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Users</h1>
 
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : users && users.length > 0 ? (
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => {
-                  const isAdmin = user.roles.includes('admin');
-                  
-                  return (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Roles</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => {
+                    const isAdmin = user.roles.includes('admin');
+                    
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {user.roles.map(role => (
+                              <Badge key={role} variant={role === 'admin' ? 'default' : 'secondary'}>
+                                {role}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleAdminMutation.mutate({ userId: user.id, isAdmin })}
+                          >
+                            {isAdmin ? (
+                              <>
+                                <ShieldOff className="w-4 h-4 mr-2" />
+                                Remove Admin
+                              </>
+                            ) : (
+                              <>
+                                <Shield className="w-4 h-4 mr-2" />
+                                Make Admin
+                              </>
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {users.map((user) => {
+                const isAdmin = user.roles.includes('admin');
+                
+                return (
+                  <Card key={user.id}>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-semibold text-foreground">{user.full_name || 'N/A'}</h3>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
                           {user.roles.map(role => (
                             <Badge key={role} variant={role === 'admin' ? 'default' : 'secondary'}>
                               {role}
                             </Badge>
                           ))}
                         </div>
-                      </TableCell>
-                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
+                        
+                        <div className="text-sm text-muted-foreground">
+                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                        </div>
+                        
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => toggleAdminMutation.mutate({ userId: user.id, isAdmin })}
+                          className="w-full"
                         >
                           {isAdmin ? (
                             <>
@@ -122,13 +177,13 @@ const Users = () => {
                             </>
                           )}
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
         ) : (
           <div className="text-center py-12 border rounded-lg">
             <p className="text-muted-foreground">No users found</p>

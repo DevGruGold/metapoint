@@ -325,14 +325,14 @@ const Import = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col md:flex-row items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Import Articles</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Import Articles</h1>
             <p className="text-muted-foreground mt-2">
               Bulk import articles from various sources
             </p>
           </div>
-          <Card className="w-48">
+          <Card className="w-full md:w-48">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <Database className="h-8 w-8 text-primary" />
@@ -358,11 +358,12 @@ const Import = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <Button
                 onClick={handleQuickLoadSamples}
                 disabled={isImporting}
                 variant="default"
+                className="w-full"
               >
                 {isImporting ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -374,21 +375,21 @@ const Import = () => {
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isClearing || articleCount === 0}>
+                  <Button variant="destructive" disabled={isClearing || articleCount === 0} className="w-full">
                     <Trash2 className="w-4 h-4 mr-2" />
                     Clear All Articles
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. This will permanently delete all {articleCount} articles from the database.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearAllArticles} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAllArticles} className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90">
                       {isClearing ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -405,6 +406,7 @@ const Import = () => {
               <Button
                 variant="outline"
                 onClick={() => window.open('/archive', '_blank')}
+                className="w-full"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 View Live Archive

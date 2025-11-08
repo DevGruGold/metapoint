@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Star, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/AdminLayout';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -84,10 +86,10 @@ const Articles = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Articles</h1>
-          <Link to="/admin/articles/new">
-            <Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Articles</h1>
+          <Link to="/admin/articles/new" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               New Article
             </Button>
@@ -105,61 +107,111 @@ const Articles = () => {
           />
         </div>
 
-        {/* Articles Table */}
+        {/* Articles Table - Desktop */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : filteredArticles && filteredArticles.length > 0 ? (
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Published Date</TableHead>
-                  <TableHead>Featured</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredArticles.map((article) => (
-                  <TableRow key={article.id}>
-                    <TableCell className="font-medium">{article.title}</TableCell>
-                    <TableCell>{article.category}</TableCell>
-                    <TableCell>{new Date(article.published_date).toLocaleDateString()}</TableCell>
-                    <TableCell>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Published Date</TableHead>
+                    <TableHead>Featured</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredArticles.map((article) => (
+                    <TableRow key={article.id}>
+                      <TableCell className="font-medium">{article.title}</TableCell>
+                      <TableCell>{article.category}</TableCell>
+                      <TableCell>{new Date(article.published_date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleFeaturedMutation.mutate({ id: article.id, isFeatured: article.is_featured })}
+                        >
+                          <Star
+                            className={`w-4 h-4 ${article.is_featured ? 'fill-orange text-orange' : 'text-muted-foreground'}`}
+                          />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link to={`/admin/articles/${article.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeleteId(article.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {filteredArticles.map((article) => (
+                <Card key={article.id}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground mb-2">{article.title}</h3>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          <Badge variant="secondary">{article.category}</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(article.published_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleFeaturedMutation.mutate({ id: article.id, isFeatured: article.is_featured })}
                       >
                         <Star
-                          className={`w-4 h-4 ${article.is_featured ? 'fill-orange text-orange' : 'text-muted-foreground'}`}
+                          className={`w-5 h-5 ${article.is_featured ? 'fill-orange text-orange' : 'text-muted-foreground'}`}
                         />
                       </Button>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link to={`/admin/articles/${article.id}/edit`}>
-                          <Button variant="outline" size="sm">
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDeleteId(article.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Link to={`/admin/articles/${article.id}/edit`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Edit
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeleteId(article.id)}
+                        className="flex-1"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2 text-destructive" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="text-center py-12 border rounded-lg">
             <p className="text-muted-foreground">No articles found</p>
