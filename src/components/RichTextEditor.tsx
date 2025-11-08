@@ -21,8 +21,13 @@ import {
   Loader2,
   Library,
   Video,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Maximize2,
+  Trash2,
 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
@@ -55,6 +60,9 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [showImageControls, setShowImageControls] = useState(false);
+  const [selectedImagePos, setSelectedImagePos] = useState<{ top: number; left: number } | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const { data: libraryImages = [] } = useQuery({
     queryKey: ['media-library-select'],
@@ -93,8 +101,64 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
         },
       }),
       Image.configure({
+        inline: true,
+        allowBase64: true,
         HTMLAttributes: {
-          class: 'rounded-lg',
+          class: 'rounded-lg cursor-pointer transition-all',
+        },
+      }).extend({
+        addAttributes() {
+          return {
+            src: {
+              default: null,
+            },
+            alt: {
+              default: null,
+            },
+            title: {
+              default: null,
+            },
+            imageWidth: {
+              default: 'medium',
+              parseHTML: element => element.getAttribute('data-width'),
+              renderHTML: attributes => {
+                return {
+                  'data-width': attributes.imageWidth,
+                };
+              },
+            },
+            imageAlign: {
+              default: 'center',
+              parseHTML: element => element.getAttribute('data-align'),
+              renderHTML: attributes => {
+                return {
+                  'data-align': attributes.imageAlign,
+                };
+              },
+            },
+          };
+        },
+        renderHTML({ HTMLAttributes }) {
+          const widthMap: Record<string, string> = {
+            small: '300px',
+            medium: '600px',
+            large: '800px',
+            full: '100%',
+          };
+          
+          const alignMap: Record<string, string> = {
+            left: 'float: left; margin-right: 1rem; margin-bottom: 0.5rem;',
+            center: 'display: block; margin-left: auto; margin-right: auto;',
+            right: 'float: right; margin-left: 1rem; margin-bottom: 0.5rem;',
+          };
+          
+          const width = widthMap[HTMLAttributes['data-width']] || '600px';
+          const align = alignMap[HTMLAttributes['data-align']] || alignMap.center;
+          
+          return ['img', {
+            ...HTMLAttributes,
+            style: `width: ${width}; max-width: 100%; ${align}`,
+          }];
         },
       }),
       Youtube.configure({
@@ -115,8 +179,37 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[400px] max-w-none p-4',
       },
+      handleClick: (view, pos, event) => {
+        const target = event.target as HTMLElement;
+        if (target.tagName === 'IMG') {
+          const rect = target.getBoundingClientRect();
+          const editorRect = editorRef.current?.getBoundingClientRect();
+          if (editorRect) {
+            setSelectedImagePos({
+              top: rect.top - editorRect.top + rect.height,
+              left: rect.left - editorRect.left,
+            });
+            setShowImageControls(true);
+          }
+          return true;
+        }
+        setShowImageControls(false);
+        return false;
+      },
     },
   });
+
+  // Hide image controls when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'IMG' && !target.closest('.image-controls')) {
+        setShowImageControls(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   if (!editor) {
     return null;
@@ -212,15 +305,28 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
 
   const addImage = () => {
     if (imageUrl) {
-      const imgHtml = imageCaption
-        ? `<figure><img src="${imageUrl}" alt="${imageCaption}" /><figcaption>${imageCaption}</figcaption></figure>`
-        : `<img src="${imageUrl}" alt="Article image" />`;
-      
-      editor.chain().focus().insertContent(imgHtml).run();
+      editor.chain()
+        .focus()
+        .setImage({ src: imageUrl, alt: imageCaption || 'Article image' })
+        .updateAttributes('image', { imageWidth: 'medium', imageAlign: 'center' })
+        .run();
       setImageUrl('');
       setImageCaption('');
       setImageDialogOpen(false);
     }
+  };
+
+  const updateImageSize = (size: 'small' | 'medium' | 'large' | 'full') => {
+    editor.chain().focus().updateAttributes('image', { imageWidth: size }).run();
+  };
+
+  const updateImageAlign = (align: 'left' | 'center' | 'right') => {
+    editor.chain().focus().updateAttributes('image', { imageAlign: align }).run();
+  };
+
+  const deleteSelectedImage = () => {
+    editor.chain().focus().deleteSelection().run();
+    setShowImageControls(false);
   };
 
   const addVideo = () => {
@@ -247,7 +353,8 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
 
   return (
     <div 
-      className={`border rounded-lg overflow-hidden transition-colors ${
+      ref={editorRef}
+      className={`relative border rounded-lg overflow-visible transition-colors ${
         dragActive ? 'border-primary border-2 bg-primary/5' : ''
       }`}
       onDrop={handleDrop}
@@ -255,8 +362,102 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
       onDragLeave={handleDragLeave}
     >
       {dragActive && (
-        <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none">
+        <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none rounded-lg">
           <div className="text-primary font-semibold text-lg">Drop image here</div>
+        </div>
+      )}
+
+      {/* Floating Image Controls */}
+      {showImageControls && selectedImagePos && (
+        <div 
+          className="image-controls absolute z-50 bg-card border shadow-lg rounded-lg p-2 flex gap-1"
+          style={{
+            top: selectedImagePos.top + 8,
+            left: selectedImagePos.left,
+          }}
+        >
+          {/* Size Controls */}
+          <div className="flex gap-1 pr-2 border-r">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageSize('small')}
+              title="Small (300px)"
+            >
+              <span className="text-xs font-medium">S</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageSize('medium')}
+              title="Medium (600px)"
+            >
+              <span className="text-xs font-medium">M</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageSize('large')}
+              title="Large (800px)"
+            >
+              <span className="text-xs font-medium">L</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageSize('full')}
+              title="Full Width"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Alignment Controls */}
+          <div className="flex gap-1 pr-2 border-r">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageAlign('left')}
+              title="Align Left"
+            >
+              <AlignLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageAlign('center')}
+              title="Align Center"
+            >
+              <AlignCenter className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => updateImageAlign('right')}
+              title="Align Right"
+            >
+              <AlignRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Delete Button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={deleteSelectedImage}
+            className="text-destructive hover:text-destructive"
+            title="Remove Image"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       )}
       <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
