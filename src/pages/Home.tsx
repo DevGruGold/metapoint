@@ -1,27 +1,26 @@
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Hero from "@/components/Hero";
 import NewsletterCard from "@/components/NewsletterCard";
 import { Button } from "@/components/ui/button";
 import mayaImage from "@/assets/maya.jpg";
 
 const Home = () => {
-  const featuredInsights = [
-    {
-      title: "Navigating Global Market Volatility",
-      date: "January 2024",
-      excerpt: "Understanding the key drivers of market uncertainty and how to position portfolios for resilience in turbulent times.",
+  const { data: featuredArticles = [], isLoading } = useQuery({
+    queryKey: ['featured-newsletters'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('newsletters')
+        .select('*')
+        .eq('is_featured', true)
+        .order('published_date', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      return data;
     },
-    {
-      title: "Emerging Markets in a Changing World",
-      date: "December 2023",
-      excerpt: "An analysis of opportunity and risk in emerging economies as geopolitical dynamics reshape global trade patterns.",
-    },
-    {
-      title: "Technology's Impact on Investment Strategy",
-      date: "November 2023",
-      excerpt: "How technological innovation is transforming traditional investment approaches and creating new opportunities.",
-    },
-  ];
+  });
 
   return (
     <>
@@ -50,36 +49,69 @@ const Home = () => {
             Latest Insights from The Meta Point
           </h2>
           
-          {/* Substack Subscribe Widget */}
-          <div className="max-w-md mx-auto mb-12 bg-white rounded-lg p-6 shadow-md">
-            <h3 className="text-xl font-semibold text-center mb-4">Subscribe to Our Newsletter</h3>
-            <iframe 
-              src="https://metapointadvisors.substack.com/embed" 
-              width="100%" 
-              height="320" 
-              style={{ border: '1px solid #EEE', background: 'white' }}
-              frameBorder="0" 
-              scrolling="no"
-              title="Subscribe to The Meta Point"
-            ></iframe>
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : featuredArticles.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {featuredArticles.map((article) => (
+                  <Link key={article.id} to={`/articles/${article.slug}`}>
+                    <NewsletterCard
+                      title={article.title}
+                      date={new Date(article.published_date).toLocaleDateString()}
+                      excerpt={article.excerpt}
+                    />
+                  </Link>
+                ))}
+              </div>
+              <div className="text-center">
+                <Link to="/archive">
+                  <Button variant="orange" size="lg" className="mr-4">
+                    View All Articles
+                  </Button>
+                </Link>
+                <Link to="/newsletter">
+                  <Button variant="outline" size="lg">
+                    Subscribe on Substack
+                  </Button>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="max-w-md mx-auto mb-12 bg-white rounded-lg p-6 shadow-md">
+                <h3 className="text-xl font-semibold text-center mb-4">Subscribe to Our Newsletter</h3>
+                <iframe 
+                  src="https://metapointadvisors.substack.com/embed" 
+                  width="100%" 
+                  height="320" 
+                  style={{ border: '1px solid #EEE', background: 'white' }}
+                  frameBorder="0" 
+                  scrolling="no"
+                  title="Subscribe to The Meta Point"
+                ></iframe>
+              </div>
 
-          <div className="text-center mb-8">
-            <a 
-              href="https://metapointadvisors.substack.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              <Button variant="orange" size="lg" className="mr-4">
-                Read on Substack
-              </Button>
-            </a>
-            <Link to="/newsletter">
-              <Button variant="outline" size="lg">
-                Learn More
-              </Button>
-            </Link>
-          </div>
+              <div className="text-center mb-8">
+                <a 
+                  href="https://metapointadvisors.substack.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="orange" size="lg" className="mr-4">
+                    Read on Substack
+                  </Button>
+                </a>
+                <Link to="/newsletter">
+                  <Button variant="outline" size="lg">
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
 

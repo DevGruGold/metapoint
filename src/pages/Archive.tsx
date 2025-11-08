@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Hero from "@/components/Hero";
 import NewsletterCard from "@/components/NewsletterCard";
 import { Input } from "@/components/ui/input";
@@ -8,56 +11,23 @@ import { Search } from "lucide-react";
 const Archive = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const articles = [
-    {
-      title: "Year-End Market Review 2023",
-      date: "December 30, 2023",
-      excerpt:
-        "A comprehensive analysis of market performance throughout 2023 and key lessons for investors.",
-      category: "Markets",
-    },
-    {
-      title: "Emerging Markets Outlook",
-      date: "December 15, 2023",
-      excerpt:
-        "Examining opportunities in emerging markets as global economic dynamics shift in 2024.",
-      category: "Geopolitics",
-    },
-    {
-      title: "Federal Reserve Policy Impact",
-      date: "November 28, 2023",
-      excerpt:
-        "Understanding the implications of recent Fed decisions on interest rates and market liquidity.",
-      category: "Economic Policy",
-    },
-    {
-      title: "Technology Sector Analysis",
-      date: "November 10, 2023",
-      excerpt:
-        "Deep dive into technology stocks and the sector's outlook amid changing market conditions.",
-      category: "Technology",
-    },
-    {
-      title: "Global Trade Dynamics",
-      date: "October 25, 2023",
-      excerpt:
-        "How shifting trade patterns and geopolitical tensions are reshaping investment strategies.",
-      category: "Geopolitics",
-    },
-    {
-      title: "Portfolio Diversification Strategies",
-      date: "October 8, 2023",
-      excerpt:
-        "Practical approaches to building resilient portfolios in uncertain market environments.",
-      category: "Markets",
-    },
-  ];
+  const { data: articles = [], isLoading } = useQuery({
+    queryKey: ['newsletters'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('newsletters')
+        .select('*')
+        .order('published_date', { ascending: false });
 
-  const filteredArticles = articles.filter(
-    (article) =>
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.category.toLowerCase().includes(searchTerm.toLowerCase())
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const filteredArticles = articles.filter((article) =>
+    article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    article.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -92,10 +62,20 @@ const Archive = () => {
             </div>
 
             {/* Articles Grid */}
-            {filteredArticles.length > 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredArticles.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredArticles.map((article, index) => (
-                  <NewsletterCard key={index} {...article} />
+                {filteredArticles.map((article) => (
+                  <Link key={article.id} to={`/articles/${article.slug}`}>
+                    <NewsletterCard
+                      title={article.title}
+                      date={new Date(article.published_date).toLocaleDateString()}
+                      excerpt={article.excerpt}
+                    />
+                  </Link>
                 ))}
               </div>
             ) : (

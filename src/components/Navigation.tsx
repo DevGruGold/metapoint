@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin, signOut } = useAuth();
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -46,6 +49,37 @@ const Navigation = () => {
                 )}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className={`text-sm font-medium hover:text-orange transition-colors relative pb-1 flex items-center gap-1 ${
+                  location.pathname.startsWith('/admin') ? "text-white" : "text-white/80"
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+                {location.pathname.startsWith('/admin') && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange"></div>
+                )}
+              </Link>
+            )}
+            {user ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={signOut}
+                className="text-white hover:text-orange hover:bg-transparent"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            ) : (
+              <Link to="/auth">
+                <Button variant="ghost" size="sm" className="text-white hover:text-orange hover:bg-transparent">
+                  Sign In
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -73,6 +107,38 @@ const Navigation = () => {
                 {item.name}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className={`block py-3 text-sm font-medium hover:text-orange transition-colors flex items-center gap-2 ${
+                  location.pathname.startsWith('/admin') ? "text-orange" : "text-white/80"
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
+            {user ? (
+              <button
+                onClick={() => {
+                  signOut();
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left py-3 text-sm font-medium text-white/80 hover:text-orange transition-colors flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                onClick={() => setIsMenuOpen(false)}
+                className="block py-3 text-sm font-medium text-white/80 hover:text-orange transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         )}
       </div>
