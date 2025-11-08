@@ -16,8 +16,10 @@ import {
   Image as ImageIcon,
   List,
   ListOrdered,
+  Upload,
+  Loader2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface RichTextEditorProps {
   content: string;
@@ -39,6 +43,8 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
   const [linkUrl, setLinkUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imageCaption, setImageCaption] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -81,6 +87,81 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
     }
   };
 
+  const uploadImage = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return null;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return null;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('article-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('article-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to upload image');
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = await uploadImage(file);
+    if (url) {
+      setImageUrl(url);
+    }
+  }, [uploadImage]);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    const url = await uploadImage(file);
+    if (url && editor) {
+      const imgHtml = `<img src="${url}" alt="Article image" />`;
+      editor.chain().focus().insertContent(imgHtml).run();
+      toast.success('Image uploaded and inserted');
+    }
+  }, [uploadImage, editor]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  }, []);
+
   const addImage = () => {
     if (imageUrl) {
       const imgHtml = imageCaption
@@ -95,7 +176,19 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div 
+      className={`border rounded-lg overflow-hidden transition-colors ${
+        dragActive ? 'border-primary border-2 bg-primary/5' : ''
+      }`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
+      {dragActive && (
+        <div className="absolute inset-0 bg-primary/10 flex items-center justify-center z-10 pointer-events-none">
+          <div className="text-primary font-semibold text-lg">Drop image here</div>
+        </div>
+      )}
       <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
         <Button
           type="button"
@@ -187,10 +280,21 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
           variant="ghost"
           size="sm"
           onClick={() => setImageDialogOpen(true)}
+          disabled={isUploading}
         >
-          <ImageIcon className="h-4 w-4" />
+          {isUploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
         </Button>
       </div>
+      
+      {dragActive && (
+        <div className="p-4 bg-primary/5 border-t border-primary/20 text-center text-sm text-primary">
+          Drop your image here to upload
+        </div>
+      )}
 
       <EditorContent editor={editor} className="bg-background" />
 
@@ -234,10 +338,37 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
           <DialogHeader>
             <DialogTitle>Insert Image</DialogTitle>
             <DialogDescription>
-              Add an image URL and optional caption
+              Upload an image or paste a URL
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="image-file">Upload Image</Label>
+              <div className="mt-2">
+                <Input
+                  id="image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                  className="cursor-pointer"
+                />
+                {isUploading && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or paste URL</span>
+              </div>
+            </div>
             <div>
               <Label htmlFor="image-url">Image URL</Label>
               <Input
@@ -268,7 +399,9 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Start writing...' }:
             <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={addImage}>Insert Image</Button>
+            <Button onClick={addImage} disabled={!imageUrl || isUploading}>
+              Insert Image
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
