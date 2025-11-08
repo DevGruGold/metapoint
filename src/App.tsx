@@ -21,6 +21,7 @@ import Articles from "./pages/admin/Articles";
 import ArticleForm from "./pages/admin/ArticleForm";
 import Users from "./pages/admin/Users";
 import MediaLibrary from "./pages/admin/MediaLibrary";
+import Import from "./pages/admin/Import";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,14 @@ const App = () => (
                   element={
                     <ProtectedRoute requireAdmin>
                       <MediaLibrary />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/import" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <Import />
                     </ProtectedRoute>
                   } 
                 />
