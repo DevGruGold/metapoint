@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Rss, FileJson, Loader2 } from 'lucide-react';
+import { Upload, FileText, Rss, FileJson, Loader2, Database, Trash2, ExternalLink, Zap } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ParsedArticle {
   title: string;
@@ -120,8 +131,24 @@ const Import = () => {
   const [importProgress, setImportProgress] = useState(0);
   const [rssUrl, setRssUrl] = useState('');
   const [jsonText, setJsonText] = useState('');
+  const [articleCount, setArticleCount] = useState<number | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const fetchArticleCount = async () => {
+    const { count, error } = await supabase
+      .from('newsletters')
+      .select('*', { count: 'exact', head: true });
+    
+    if (!error) {
+      setArticleCount(count);
+    }
+  };
+
+  useEffect(() => {
+    fetchArticleCount();
+  }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'csv' | 'json') => {
     const file = event.target.files?.[0];
@@ -174,6 +201,67 @@ const Import = () => {
     });
   };
 
+  const handleQuickLoadSamples = async () => {
+    const samples = createSampleArticles();
+    setParsedArticles(samples);
+    
+    setIsImporting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    let successCount = 0;
+
+    for (const article of samples) {
+      const slug = generateSlug(article.title);
+      try {
+        const { error } = await supabase.from('newsletters').insert({
+          title: article.title,
+          slug: slug,
+          excerpt: article.excerpt,
+          full_content: article.full_content,
+          category: article.category,
+          published_date: article.published_date,
+          author: article.author || 'Maya Joelson',
+          external_link: article.external_link || null,
+          featured_image: article.featured_image || null,
+          created_by: user?.id,
+          is_featured: false,
+        });
+        if (!error) successCount++;
+      } catch (error) {
+        console.error('Import error:', error);
+      }
+    }
+
+    setIsImporting(false);
+    await fetchArticleCount();
+    
+    toast({
+      title: "Sample articles imported",
+      description: `Successfully imported ${successCount} sample articles`,
+    });
+  };
+
+  const handleClearAllArticles = async () => {
+    setIsClearing(true);
+    const { error } = await supabase.from('newsletters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    
+    setIsClearing(false);
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear articles",
+        variant: "destructive",
+      });
+    } else {
+      await fetchArticleCount();
+      setParsedArticles([]);
+      toast({
+        title: "All articles cleared",
+        description: "Database has been reset",
+      });
+    }
+  };
+
   const handleImport = async () => {
     if (parsedArticles.length === 0) {
       toast({
@@ -222,6 +310,8 @@ const Import = () => {
 
     setIsImporting(false);
     
+    await fetchArticleCount();
+    
     toast({
       title: "Import complete",
       description: `Successfully imported ${successCount} articles. ${errorCount > 0 ? `${errorCount} failed.` : ''}`,
@@ -235,12 +325,93 @@ const Import = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Import Articles</h1>
-          <p className="text-muted-foreground mt-2">
-            Bulk import articles from various sources
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Import Articles</h1>
+            <p className="text-muted-foreground mt-2">
+              Bulk import articles from various sources
+            </p>
+          </div>
+          <Card className="w-48">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Database className="h-8 w-8 text-primary" />
+                <div>
+                  <p className="text-2xl font-bold">
+                    {articleCount !== null ? articleCount : '...'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Articles in DB</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Quick Actions
+            </CardTitle>
+            <CardDescription>
+              One-click operations for testing and management
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={handleQuickLoadSamples}
+                disabled={isImporting}
+                variant="default"
+              >
+                {isImporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                Load Sample Data
+              </Button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isClearing || articleCount === 0}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear All Articles
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete all {articleCount} articles from the database.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAllArticles} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      {isClearing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Clearing...
+                        </>
+                      ) : (
+                        'Delete All'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Button
+                variant="outline"
+                onClick={() => window.open('/archive', '_blank')}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Live Archive
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="samples" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
