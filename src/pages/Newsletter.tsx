@@ -107,7 +107,7 @@ const Newsletter = () => {
             <h2 className="text-3xl font-bold text-center mb-12">Recent Articles</h2>
             
             {/* Substack Subscription Widget */}
-            <div className="bg-white rounded-lg p-8 shadow-md mb-12">
+            <div className="bg-card rounded-lg p-8 shadow-md mb-12">
               <h3 className="text-xl font-semibold text-center mb-6">Subscribe to The Meta Point</h3>
               <div className="max-w-md mx-auto">
                 <iframe 

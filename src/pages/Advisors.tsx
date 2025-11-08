@@ -150,7 +150,7 @@ const Advisors = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">Video Talks & Presentations</h2>
-            <div className="bg-white rounded-lg p-12 text-center shadow-md">
+            <div className="bg-card rounded-lg p-12 text-center shadow-md">
               <p className="text-muted-foreground mb-4">
                 Video content showcasing presentations, interviews, and market commentary.
               </p>

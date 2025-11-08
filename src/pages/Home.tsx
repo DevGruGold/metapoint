@@ -81,7 +81,7 @@ const Home = () => {
             </>
           ) : (
             <>
-              <div className="max-w-md mx-auto mb-12 bg-white rounded-lg p-6 shadow-md">
+              <div className="max-w-md mx-auto mb-12 bg-card rounded-lg p-6 shadow-md">
                 <h3 className="text-xl font-semibold text-center mb-4">Subscribe to Our Newsletter</h3>
                 <iframe 
                   src="https://metapointadvisors.substack.com/embed" 

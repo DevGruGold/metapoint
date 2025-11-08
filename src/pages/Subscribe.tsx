@@ -46,7 +46,7 @@ const Subscribe = () => {
       <section className="py-10 bg-light-gray">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
+            <div className="bg-card rounded-lg shadow-lg p-8 md:p-12">
               <h2 className="text-3xl font-bold text-center mb-8">What You'll Get</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
@@ -96,7 +96,7 @@ const Subscribe = () => {
             <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
             <div className="space-y-6">
               {faqs.map((faq, index) => (
-                <div key={index} className="bg-white rounded-lg p-6 shadow-md">
+                <div key={index} className="bg-card rounded-lg p-6 shadow-md">
                   <h3 className="font-semibold text-lg mb-3">{faq.question}</h3>
                   <p className="text-muted-foreground">{faq.answer}</p>
                 </div>

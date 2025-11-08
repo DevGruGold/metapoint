@@ -59,7 +59,7 @@ const Contact = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="bg-card rounded-lg shadow-lg p-8">
               <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div>
