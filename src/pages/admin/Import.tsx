@@ -130,6 +130,8 @@ const Import = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [rssUrl, setRssUrl] = useState('');
+  const [articleUrl, setArticleUrl] = useState('');
+  const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [articleCount, setArticleCount] = useState<number | null>(null);
   const [isClearing, setIsClearing] = useState(false);
@@ -322,6 +324,91 @@ const Import = () => {
     }
   };
 
+  const handleUrlImport = async () => {
+    if (!articleUrl.trim()) {
+      toast({
+        title: "URL required",
+        description: "Please enter an article URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImportingUrl(true);
+
+    try {
+      console.log('Calling ai-migrate-story with URL:', articleUrl);
+      
+      const { data, error } = await supabase.functions.invoke('ai-migrate-story', {
+        body: { url: articleUrl }
+      });
+
+      if (error) {
+        console.error('Edge Function error:', error);
+        toast({
+          title: "Import failed",
+          description: error.message || "Failed to fetch article content",
+          variant: "destructive",
+        });
+        setIsImportingUrl(false);
+        return;
+      }
+
+      console.log('Article extracted successfully:', data);
+
+      // Insert into database
+      const { data: { user } } = await supabase.auth.getUser();
+      const slug = generateSlug(data.title);
+
+      console.log('Inserting article into database...');
+      const { error: insertError } = await supabase.from('newsletters').insert({
+        title: data.title,
+        slug: slug,
+        excerpt: data.excerpt,
+        full_content: data.content,
+        category: data.category || 'Investment Insights',
+        published_date: data.publishedDate,
+        author: data.author || 'Maya Joelson',
+        external_link: data.externalLink || articleUrl,
+        featured_image: data.images?.[0]?.url || null,
+        created_by: user?.id,
+        is_featured: false,
+      });
+
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        toast({
+          title: "Import failed",
+          description: insertError.message || "Failed to save article",
+          variant: "destructive",
+        });
+        setIsImportingUrl(false);
+        return;
+      }
+
+      console.log('Article saved successfully');
+      toast({
+        title: "Article imported successfully",
+        description: `"${data.title}" has been added`,
+      });
+
+      setArticleUrl('');
+      await fetchArticleCount();
+      setTimeout(() => navigate('/admin/articles'), 1500);
+
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: "Import failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingUrl(false);
+    }
+  };
+
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -416,7 +503,11 @@ const Import = () => {
         </Card>
 
         <Tabs defaultValue="samples" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="url">
+            <ExternalLink className="w-4 h-4 mr-2" />
+            URL
+          </TabsTrigger>
             <TabsTrigger value="samples">
               <FileText className="w-4 h-4 mr-2" />
               Samples
@@ -434,6 +525,79 @@ const Import = () => {
               Paste
             </TabsTrigger>
           </TabsList>
+
+
+          <TabsContent value="url">
+            <Card>
+              <CardHeader>
+                <CardTitle>Import from URL</CardTitle>
+                <CardDescription>
+                  Enter a ConstantContact newsletter URL to import it automatically using AI
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="articleUrl">Article URL</Label>
+                  <Input
+                    id="articleUrl"
+                    type="url"
+                    placeholder="https://conta.cc/... or https://myemail.constantcontact.com/..."
+                    value={articleUrl}
+                    onChange={(e) => setArticleUrl(e.target.value)}
+                    disabled={isImportingUrl}
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleUrlImport} 
+                  disabled={isImportingUrl || !articleUrl.trim()}
+                  className="w-full"
+                >
+                  {isImportingUrl ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Importing... (this may take 30-60 seconds)
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Import Article
+                    </>
+                  )}
+                </Button>
+
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <h4 className="font-semibold mb-2">How it works:</h4>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                    <li>Paste the ConstantContact newsletter URL</li>
+                    <li>AI extracts the article content, images, and metadata</li>
+                    <li>Article is automatically formatted and saved to database</li>
+                    <li>You'll be redirected to the articles list</li>
+                  </ol>
+                  <p className="mt-3 text-sm text-amber-600 font-medium">
+                    ⚠️ Note: Requires LOVABLE_API_KEY to be configured in Edge Function secrets
+                  </p>
+                </div>
+
+                {!articleUrl && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-semibold">Newsletter URLs to Import:</Label>
+                    <div className="mt-2 space-y-2">
+                      <button
+                        onClick={() => setArticleUrl('https://conta.cc/3XBvQ4S')}
+                        className="block w-full text-left text-sm text-blue-600 hover:bg-blue-50 p-2 rounded"
+                      >
+                        Black Swan/Black Bat (COVID-19 market analysis)
+                      </button>
+                      <p className="text-xs text-muted-foreground">
+                        Click to load example URL, or paste your own ConstantContact newsletter URL
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="samples">
             <Card>
