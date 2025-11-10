@@ -15,9 +15,11 @@ const Archive = () => {
   const { data: databaseArticles = [], isLoading } = useQuery({
     queryKey: ['newsletters'],
     queryFn: async () => {
+      // OPTIMIZED: Only select fields needed for teaser cards, NOT full_content
       const { data, error } = await supabase
         .from('newsletters')
-        .select('*')
+        .select('id, title, slug, excerpt, published_date, category, author, featured_image, external_link')
+        .eq('is_published', true)
         .order('published_date', { ascending: false });
 
       if (error) throw error;
