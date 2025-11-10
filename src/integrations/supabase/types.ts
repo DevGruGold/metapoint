@@ -27,6 +27,7 @@ export type Database = {
           full_content: string
           id: string
           is_featured: boolean | null
+          is_published: boolean | null
           keywords: string[] | null
           meta_description: string | null
           published_date: string
@@ -46,6 +47,7 @@ export type Database = {
           full_content: string
           id?: string
           is_featured?: boolean | null
+          is_published?: boolean | null
           keywords?: string[] | null
           meta_description?: string | null
           published_date: string
@@ -65,11 +67,39 @@ export type Database = {
           full_content?: string
           id?: string
           is_featured?: boolean | null
+          is_published?: boolean | null
           keywords?: string[] | null
           meta_description?: string | null
           published_date?: string
           slug?: string
           title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          slug?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -81,6 +111,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          role: string | null
           updated_at: string | null
         }
         Insert: {
@@ -89,6 +120,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          role?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -97,9 +129,45 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          role?: string | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      user_organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          role?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -127,16 +195,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      has_role:
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
     }
     Enums: {
-      app_role: "admin" | "editor" | "user"
+      app_role: "admin" | "editor" | "user" | "superadmin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -264,7 +334,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "editor", "user"],
+      app_role: ["admin", "editor", "user", "superadmin"],
     },
   },
 } as const
