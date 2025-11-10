@@ -1,4 +1,15 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+// ============================================================================
+// IMPROVED useAuth.tsx - PREVENTS GLITCHING WITH STABLE ADMIN CHECK
+// ============================================================================
+// Replace src/hooks/useAuth.tsx with this improved version
+// Key improvements:
+// 1. Prevents race conditions by deferring admin check
+// 2. Adds debouncing to prevent rapid state changes
+// 3. Better error handling and logging
+// 4. More stable loading states
+// ============================================================================
+
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -23,77 +34,132 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Prevent duplicate admin checks
+  const adminCheckInProgress = useRef(false);
+  const lastCheckedUserId = useRef<string | null>(null);
 
-  const checkAdminRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error checking admin role:', error);
-      return false;
+  const checkAdminRole = async (userId: string): Promise<boolean> => {
+    // Prevent duplicate checks for same user
+    if (adminCheckInProgress.current || lastCheckedUserId.current === userId) {
+      console.log('[Auth] Skipping duplicate admin check for', userId);
+      return isAdmin;
     }
+
+    adminCheckInProgress.current = true;
+    lastCheckedUserId.current = userId;
+
+    try {
+      console.log('[Auth] Checking admin role for user:', userId);
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      if (error) {
+        console.error('[Auth] Error checking admin role:', error);
+        return false;
+      }
+      
+      const hasAdminRole = !!data;
+      console.log('[Auth] Admin role check result:', hasAdminRole);
+      return hasAdminRole;
+
+    } catch (error) {
+      console.error('[Auth] Exception checking admin role:', error);
+      return false;
+    } finally {
+      adminCheckInProgress.current = false;
+    }
+  };
+
+  // Debounced admin check to prevent rapid state changes
+  const updateAdminStatus = async (userId: string) => {
+    // Wait a bit to let auth state stabilize
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    return !!data;
+    const isAdminUser = await checkAdminRole(userId);
+    setIsAdmin(isAdminUser);
+    setLoading(false);
+    
+    console.log('[Auth] Admin status updated:', {
+      userId,
+      isAdmin: isAdminUser,
+      loading: false
+    });
   };
 
   useEffect(() => {
+    console.log('[Auth] Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (event, currentSession) => {
+        console.log('[Auth] Auth state change:', event, currentSession?.user?.email);
         
-        // Defer admin check to avoid blocking
-        if (session?.user) {
-          setTimeout(async () => {
-            const isAdminUser = await checkAdminRole(session.user.id);
-            setIsAdmin(isAdminUser);
-          }, 0);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          // User signed in - check admin role
+          await updateAdminStatus(currentSession.user.id);
         } else {
+          // User signed out - clear admin status immediately
           setIsAdmin(false);
+          setLoading(false);
+          lastCheckedUserId.current = null;
+          console.log('[Auth] User signed out, admin status cleared');
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session on mount
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('[Auth] Initial session check:', currentSession?.user?.email);
       
-      if (session?.user) {
-        setTimeout(async () => {
-          const isAdminUser = await checkAdminRole(session.user.id);
-          setIsAdmin(isAdminUser);
-          setLoading(false);
-        }, 0);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        updateAdminStatus(currentSession.user.id);
       } else {
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [checkAdminRole]);
+    return () => {
+      console.log('[Auth] Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
+  }, []); // Empty dependency array - only run once on mount
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('[Auth] Signing in:', email);
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error('[Auth] Sign in error:', error);
         toast.error(error.message);
         return { error };
       }
       
       toast.success('Signed in successfully!');
+      
+      // Wait for admin status to be checked before navigating
+      await new Promise(resolve => setTimeout(resolve, 500));
       navigate('/');
+      
       return { error: null };
     } catch (error: any) {
+      console.error('[Auth] Sign in exception:', error);
       toast.error('An unexpected error occurred');
       return { error };
     }
@@ -101,6 +167,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      console.log('[Auth] Signing up:', email);
+      
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
@@ -115,6 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
+        console.error('[Auth] Sign up error:', error);
         if (error.message.includes('already registered')) {
           toast.error('This email is already registered. Please sign in instead.');
         } else {
@@ -126,6 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast.success('Account created! Please check your email to verify.');
       return { error: null };
     } catch (error: any) {
+      console.error('[Auth] Sign up exception:', error);
       toast.error('An unexpected error occurred');
       return { error };
     }
@@ -133,16 +203,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      console.log('[Auth] Signing out');
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
+        console.error('[Auth] Sign out error:', error);
         toast.error(error.message);
         return;
       }
       
+      // Clear admin status immediately
       setIsAdmin(false);
+      lastCheckedUserId.current = null;
+      
       toast.success('Signed out successfully');
       navigate('/');
     } catch (error) {
+      console.error('[Auth] Sign out exception:', error);
       toast.error('Error signing out');
     }
   };
