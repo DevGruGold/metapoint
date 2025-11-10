@@ -10,6 +10,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -37,18 +38,44 @@ const Contact = () => {
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    console.log("Contact form data:", data);
-    
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for reaching out. We'll respond within 24-48 hours.",
-    });
-    
-    reset();
-    setIsSubmitting(false);
+    try {
+      console.log('Submitting contact form:', data);
+      
+      // Call Edge Function to send email
+      const { data: responseData, error } = await supabase.functions.invoke('send-contact-email', {
+        body: {
+          name: data.name,
+          email: data.email,
+          subject: data.subject,
+          message: data.message,
+        }
+      });
+
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw error;
+      }
+
+      console.log('Email sent successfully:', responseData);
+      
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for reaching out. We'll respond within 24-48 hours.",
+      });
+      
+      reset();
+      
+    } catch (error) {
+      console.error('Error sending contact form:', error);
+      
+      toast({
+        title: "Error",
+        description: "There was a problem sending your message. Please try emailing us directly at mmjoelson@gmail.com",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,10 +123,10 @@ const Contact = () => {
                       <SelectValue placeholder="Select a subject" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="newsletter">Newsletter Inquiry</SelectItem>
-                      <SelectItem value="advisory">Advisory Services Inquiry</SelectItem>
-                      <SelectItem value="press">Press/Media Inquiry</SelectItem>
-                      <SelectItem value="general">General Inquiry</SelectItem>
+                      <SelectItem value="Newsletter Inquiry">Newsletter Inquiry</SelectItem>
+                      <SelectItem value="Advisory Services Inquiry">Advisory Services Inquiry</SelectItem>
+                      <SelectItem value="Press/Media Inquiry">Press/Media Inquiry</SelectItem>
+                      <SelectItem value="General Inquiry">General Inquiry</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.subject && (
