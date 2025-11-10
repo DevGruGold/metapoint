@@ -11,9 +11,10 @@ const Home = () => {
   const { data: databaseArticles = [], isLoading } = useQuery({
     queryKey: ['featured-newsletters'],
     queryFn: async () => {
+      // OPTIMIZED: Only select fields needed for teaser cards, NOT full_content
       const { data, error } = await supabase
         .from('newsletters')
-        .select('*')
+        .select('id, title, slug, excerpt, published_date, category, author, featured_image, external_link')
         .eq('is_featured', true)
         .order('published_date', { ascending: false })
         .limit(3);
