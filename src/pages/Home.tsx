@@ -85,6 +85,7 @@ const Home = () => {
                         title={article.title}
                         date={new Date(article.published_date).toLocaleDateString()}
                         excerpt={article.excerpt}
+                        image={article.featured_image}
                       />
                     </a>
                   );
