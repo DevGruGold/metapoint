@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import Hero from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ type ContactFormData = z.infer<typeof contactSchema>;
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const canonicalUrl = `${window.location.origin}/contact`;
 
   const {
     register,
@@ -80,6 +82,23 @@ const Contact = () => {
 
   return (
     <>
+      <Helmet>
+        <title>Contact Us | Meta Point Advisors</title>
+        <meta name="description" content="Get in touch with Meta Point Advisors for investment advisory services, newsletter inquiries, or general questions. We respond within 24-48 hours." />
+        <link rel="canonical" href={canonicalUrl} />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content="Contact Meta Point Advisors" />
+        <meta property="og:description" content="Get in touch for investment advisory services and market insights" />
+        <meta property="og:image" content={`${window.location.origin}/og-image.jpg`} />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Contact Meta Point Advisors" />
+        <meta name="twitter:description" content="Get in touch for investment advisory services and market insights" />
+        <meta name="twitter:image" content={`${window.location.origin}/og-image.jpg`} />
+      </Helmet>
+      
       <Hero title="Get in Touch" subtitle="We'd love to hear from you" />
 
       <section className="py-10 bg-light-gray">
