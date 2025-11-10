@@ -5,9 +5,10 @@ import Hero from "@/components/Hero";
 import NewsletterCard from "@/components/NewsletterCard";
 import { Button } from "@/components/ui/button";
 import mayaImage from "@/assets/maya.jpg";
+import { featuredArticles } from "@/data/featuredArticles";
 
 const Home = () => {
-  const { data: featuredArticles = [], isLoading } = useQuery({
+  const { data: databaseArticles = [], isLoading } = useQuery({
     queryKey: ['featured-newsletters'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -21,6 +22,14 @@ const Home = () => {
       return data;
     },
   });
+
+  // Combine database articles with featured articles from data file
+  // Show first 3 featured articles if no database articles
+  const displayArticles = databaseArticles.length > 0 
+    ? databaseArticles 
+    : featuredArticles.slice(0, 3);
+
+  const hasArticles = displayArticles.length > 0;
 
   return (
     <>
@@ -53,18 +62,32 @@ const Home = () => {
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
-          ) : featuredArticles.length > 0 ? (
+          ) : hasArticles ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                {featuredArticles.map((article) => (
-                  <Link key={article.id} to={`/articles/${article.slug}`}>
-                    <NewsletterCard
-                      title={article.title}
-                      date={new Date(article.published_date).toLocaleDateString()}
-                      excerpt={article.excerpt}
-                    />
-                  </Link>
-                ))}
+                {displayArticles.map((article) => {
+                  // Check if this is a featured article (has external_link) or database article
+                  const isExternal = 'external_link' in article && article.external_link;
+                  const link = isExternal 
+                    ? article.external_link 
+                    : `/articles/${article.slug}`;
+                  
+                  return (
+                    <a 
+                      key={article.id} 
+                      href={link}
+                      target={isExternal ? "_blank" : undefined}
+                      rel={isExternal ? "noopener noreferrer" : undefined}
+                      className="block hover:scale-[1.02] transition-transform"
+                    >
+                      <NewsletterCard
+                        title={article.title}
+                        date={new Date(article.published_date).toLocaleDateString()}
+                        excerpt={article.excerpt}
+                      />
+                    </a>
+                  );
+                })}
               </div>
               <div className="text-center">
                 <Link to="/archive">
