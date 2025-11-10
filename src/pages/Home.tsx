@@ -5,28 +5,24 @@ import Hero from "@/components/Hero";
 import NewsletterCard from "@/components/NewsletterCard";
 import { Button } from "@/components/ui/button";
 import mayaImage from "@/assets/maya.jpg";
-import { featuredArticles } from "@/data/featuredArticles";
+import { featuredArticles, type FeaturedArticle } from "@/data/featuredArticles";
 
 const Home = () => {
   const { data: databaseArticles = [], isLoading } = useQuery({
     queryKey: ['featured-newsletters'],
-    queryFn: async () => {
+    queryFn: async (): Promise<any[]> => {
       // OPTIMIZED: Only select fields needed for teaser cards, NOT full_content
-      const { data, error } = await supabase
-        .from('newsletters')
-        .select('id, title, slug, excerpt, published_date, category, author, featured_image, external_link')
-        .eq('is_featured', true)
-        .order('published_date', { ascending: false })
-        .limit(3);
+      const query = (supabase.from('newsletters') as any).select('id, title, slug, excerpt, published_date, category, author, featured_image, external_link').eq('is_featured', true).order('published_date', { ascending: false }).limit(3);
+      const { data, error } = await query;
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
   // Combine database articles with featured articles from data file
   // Show first 3 featured articles if no database articles
-  const displayArticles = databaseArticles.length > 0 
+  const displayArticles: any[] = databaseArticles.length > 0 
     ? databaseArticles 
     : featuredArticles.slice(0, 3);
 
@@ -67,18 +63,18 @@ const Home = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 {displayArticles.map((article) => {
-                  // Check if this is a featured article (has external_link) or database article
-                  const isExternal = 'external_link' in article && article.external_link;
-                  const link = isExternal 
+                  // Check if this is a featured article (external_link) or database article (slug)
+                  const isFeatured = 'external_link' in article && article.external_link && !('slug' in article);
+                  const link = isFeatured 
                     ? article.external_link 
-                    : `/articles/${article.slug}`;
+                    : `/articles/${'slug' in article ? article.slug : ''}`;
                   
                   return (
                     <a 
                       key={article.id} 
                       href={link}
-                      target={isExternal ? "_blank" : undefined}
-                      rel={isExternal ? "noopener noreferrer" : undefined}
+                      target={isFeatured ? "_blank" : undefined}
+                      rel={isFeatured ? "noopener noreferrer" : undefined}
                       className="block hover:scale-[1.02] transition-transform"
                     >
                       <NewsletterCard
