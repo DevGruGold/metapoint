@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Rss, FileJson, Loader2, Database, Trash2, ExternalLink, Zap } from 'lucide-react';
+import { Upload, FileText, Rss, FileJson, Loader2, Database, Trash2, ExternalLink, Zap, Star } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { featuredArticles } from '@/data/featuredArticles';
 
 interface ParsedArticle {
   title: string;
@@ -242,6 +243,46 @@ const Import = () => {
     });
   };
 
+  const handleImportFeaturedArticles = async () => {
+    setIsImporting(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    let successCount = 0;
+
+    for (const article of featuredArticles) {
+      const slug = generateSlug(article.title);
+      try {
+        const { error } = await supabase.from('newsletters').insert({
+          title: article.title,
+          slug: slug,
+          excerpt: article.excerpt,
+          full_content: `<p>${article.excerpt}</p>`,
+          category: article.category,
+          published_date: article.published_date,
+          author: article.author,
+          external_link: article.external_link,
+          featured_image: article.featured_image || null,
+          created_by: user?.id,
+          is_featured: true,
+        });
+        if (!error) successCount++;
+      } catch (error) {
+        console.error('Import error:', error);
+      }
+    }
+
+    setIsImporting(false);
+    await fetchArticleCount();
+    
+    toast({
+      title: "Featured articles imported",
+      description: `Successfully imported ${successCount} of ${featuredArticles.length} featured articles`,
+    });
+
+    if (successCount > 0) {
+      setTimeout(() => navigate('/admin/articles'), 1500);
+    }
+  };
+
   const handleClearAllArticles = async () => {
     setIsClearing(true);
     const { error } = await supabase.from('newsletters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -447,9 +488,23 @@ const Import = () => {
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <Button
-                onClick={handleQuickLoadSamples}
+                onClick={handleImportFeaturedArticles}
                 disabled={isImporting}
                 variant="default"
+                className="w-full"
+              >
+                {isImporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Star className="w-4 h-4 mr-2" />
+                )}
+                Import 7 Featured Articles
+              </Button>
+
+              <Button
+                onClick={handleQuickLoadSamples}
+                disabled={isImporting}
+                variant="outline"
                 className="w-full"
               >
                 {isImporting ? (
