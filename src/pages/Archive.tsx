@@ -7,11 +7,12 @@ import NewsletterCard from "@/components/NewsletterCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import { featuredArticles } from "@/data/featuredArticles";
 
 const Archive = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: articles = [], isLoading } = useQuery({
+  const { data: databaseArticles = [], isLoading } = useQuery({
     queryKey: ['newsletters'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,7 +25,14 @@ const Archive = () => {
     },
   });
 
-  const filteredArticles = articles.filter((article) =>
+  // Combine database articles with featured articles
+  // Featured articles appear first, then database articles
+  const allArticles = [
+    ...featuredArticles,
+    ...databaseArticles
+  ];
+
+  const filteredArticles = allArticles.filter((article) =>
     article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     article.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
     article.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -57,7 +65,7 @@ const Archive = () => {
             {/* Filter Info */}
             <div className="text-center mb-8">
               <p className="text-muted-foreground">
-                Showing {filteredArticles.length} of {articles.length} articles
+                Showing {filteredArticles.length} of {allArticles.length} articles
               </p>
             </div>
 
@@ -68,15 +76,29 @@ const Archive = () => {
               </div>
             ) : filteredArticles.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredArticles.map((article) => (
-                  <Link key={article.id} to={`/articles/${article.slug}`}>
-                    <NewsletterCard
-                      title={article.title}
-                      date={new Date(article.published_date).toLocaleDateString()}
-                      excerpt={article.excerpt}
-                    />
-                  </Link>
-                ))}
+                {filteredArticles.map((article) => {
+                  // Check if this is a featured article (has external_link) or database article
+                  const isExternal = 'external_link' in article && article.external_link;
+                  const link = isExternal 
+                    ? article.external_link 
+                    : `/articles/${article.slug}`;
+                  
+                  return (
+                    <a 
+                      key={article.id} 
+                      href={link}
+                      target={isExternal ? "_blank" : undefined}
+                      rel={isExternal ? "noopener noreferrer" : undefined}
+                      className="block hover:scale-[1.02] transition-transform"
+                    >
+                      <NewsletterCard
+                        title={article.title}
+                        date={new Date(article.published_date).toLocaleDateString()}
+                        excerpt={article.excerpt}
+                      />
+                    </a>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
