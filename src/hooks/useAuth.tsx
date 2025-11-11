@@ -37,18 +37,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   // Prevent duplicate admin checks
   const adminCheckInProgress = useRef(false);
-  const lastCheckedUserId = useRef<string | null>(null);
 
   const checkAdminRole = async (userId: string): Promise<boolean> => {
-    // Only prevent duplicate checks if one is in progress
-    if (adminCheckInProgress.current) {
-      console.log('[Auth] Admin check already in progress, waiting...');
-      return isAdmin;
-    }
-
-    adminCheckInProgress.current = true;
-    lastCheckedUserId.current = userId;
-
     try {
       console.log('[Auth] Checking admin role for user:', userId);
       
@@ -70,25 +60,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('[Auth] Exception checking admin role:', error);
       return false;
-    } finally {
-      adminCheckInProgress.current = false;
     }
   };
 
-  // Debounced admin check to prevent rapid state changes
+  // Update admin status with proper concurrency handling
   const updateAdminStatus = async (userId: string) => {
-    // Wait a bit to let auth state stabilize
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Prevent concurrent checks
+    if (adminCheckInProgress.current) {
+      console.log('[Auth] Admin check already in progress, skipping...');
+      return;
+    }
     
-    const isAdminUser = await checkAdminRole(userId);
-    setIsAdmin(isAdminUser);
-    setLoading(false);
+    adminCheckInProgress.current = true;
     
-    console.log('[Auth] Admin status updated:', {
-      userId,
-      isAdmin: isAdminUser,
-      loading: false
-    });
+    try {
+      const isAdminUser = await checkAdminRole(userId);
+      setIsAdmin(isAdminUser);
+      setLoading(false);
+      
+      console.log('[Auth] Admin status updated:', {
+        userId,
+        isAdmin: isAdminUser,
+        loading: false
+      });
+    } finally {
+      adminCheckInProgress.current = false;
+    }
   };
 
   useEffect(() => {
@@ -109,7 +106,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // User signed out - clear admin status immediately
           setIsAdmin(false);
           setLoading(false);
-          lastCheckedUserId.current = null;
           console.log('[Auth] User signed out, admin status cleared');
         }
       }
@@ -208,7 +204,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(false);
       setUser(null);
       setSession(null);
-      lastCheckedUserId.current = null;
       
       const { error } = await supabase.auth.signOut();
       if (error) {
