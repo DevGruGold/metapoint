@@ -12,39 +12,63 @@ serve(async (req) => {
   }
 
   try {
+    console.log('[ai-migrate-story] Request received');
+    
+    const authHeader = req.headers.get('Authorization');
+    console.log('[ai-migrate-story] Auth header present:', !!authHeader);
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: authHeader! } } }
     );
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    console.log('[ai-migrate-story] Checking user authentication...');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError) {
+      console.error('[ai-migrate-story] Auth error:', authError);
+      return new Response(JSON.stringify({ error: 'Authentication failed: ' + authError.message }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    if (!user) {
+      console.error('[ai-migrate-story] No user found - token may be expired');
+      return new Response(JSON.stringify({ error: 'Unauthorized - Please sign in again' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log('[ai-migrate-story] User authenticated:', user.id);
 
+    console.log('[ai-migrate-story] Checking admin role for user:', user.id);
     const { data: hasAdminRole, error: roleError } = await supabaseClient.rpc('has_role', {
       _user_id: user.id,
       _role: 'admin'
     });
 
     if (roleError) {
-      console.error('Error checking admin role:', roleError);
-      return new Response(JSON.stringify({ error: 'Failed to verify permissions' }), {
+      console.error('[ai-migrate-story] Error checking admin role:', roleError);
+      return new Response(JSON.stringify({ error: 'Failed to verify permissions: ' + roleError.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('[ai-migrate-story] Admin role check result:', hasAdminRole);
+    
     if (!hasAdminRole) {
+      console.error('[ai-migrate-story] User is not admin:', user.id);
       return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    console.log('[ai-migrate-story] User authorized as admin');
 
     const { url } = await req.json();
 
