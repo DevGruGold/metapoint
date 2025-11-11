@@ -378,7 +378,22 @@ const Import = () => {
     setIsImportingUrl(true);
 
     try {
+      // Verify user has a valid session before calling edge function
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('No valid session:', sessionError);
+        toast({
+          title: "Authentication required",
+          description: "Please sign out and sign in again to refresh your session",
+          variant: "destructive",
+        });
+        setIsImportingUrl(false);
+        return;
+      }
+
       console.log('Calling ai-migrate-story with URL:', articleUrl);
+      console.log('Session is valid, access token present:', !!session.access_token);
       
       const { data, error } = await supabase.functions.invoke('ai-migrate-story', {
         body: { url: articleUrl }
