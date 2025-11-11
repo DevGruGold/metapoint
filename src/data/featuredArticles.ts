@@ -1,5 +1,6 @@
 // Featured Articles with Direct Links
 // These will be displayed on Home page and Archive page until imported to database
+import russianTanks from '@/assets/russian_tanks.jpg';
 
 export interface FeaturedArticle {
   id: string;
@@ -31,7 +32,7 @@ export const featuredArticles: FeaturedArticle[] = [
     published_date: '2022-03-15',
     category: 'Geopolitical Analysis',
     author: 'Maya Joelson',
-    featured_image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80'
+    featured_image: russianTanks
   },
   {
     id: 'ides-of-march',
