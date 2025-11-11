@@ -56,16 +56,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .in('role', ['admin', 'superadmin'])
-        .maybeSingle();
+        .in('role', ['admin', 'superadmin']);
       
       if (error) {
         console.error('[Auth] Error checking admin role:', error);
         return false;
       }
       
-      const hasAdminRole = !!data;
-      console.log('[Auth] Admin role check result:', hasAdminRole);
+      const hasAdminRole = data && data.length > 0;
+      console.log('[Auth] Admin role check result:', hasAdminRole, 'Roles:', data);
       return hasAdminRole;
 
     } catch (error) {
