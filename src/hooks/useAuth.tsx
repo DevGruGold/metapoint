@@ -105,19 +105,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         console.log('[Auth] Auth state change:', event, currentSession?.user?.email);
         
+        // Only synchronous state updates here
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          // User signed in - check admin role
-          await updateAdminStatus(currentSession.user.id);
+          // Defer admin check with setTimeout to prevent deadlock
+          setTimeout(() => {
+            updateAdminStatus(currentSession.user.id);
+          }, 0);
         } else {
           // User signed out - clear admin status immediately
           setIsAdmin(false);
           setLoading(false);
+          adminCheckInProgress.current = false; // Reset flag on sign out
           console.log('[Auth] User signed out, admin status cleared');
         }
       }
@@ -212,7 +216,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('[Auth] Signing out');
       
-      // Clear admin status and user state immediately for instant UI feedback
+      // Clear admin check flag and state immediately
+      adminCheckInProgress.current = false;
       setIsAdmin(false);
       setUser(null);
       setSession(null);
@@ -224,6 +229,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
+      console.log('[Auth] Sign out successful');
       toast.success('Signed out successfully');
       navigate('/');
     } catch (error) {
