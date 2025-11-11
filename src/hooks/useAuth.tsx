@@ -204,16 +204,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('[Auth] Signing out');
       
+      // Clear admin status and user state immediately for instant UI feedback
+      setIsAdmin(false);
+      setUser(null);
+      setSession(null);
+      lastCheckedUserId.current = null;
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('[Auth] Sign out error:', error);
         toast.error(error.message);
         return;
       }
-      
-      // Clear admin status immediately
-      setIsAdmin(false);
-      lastCheckedUserId.current = null;
       
       toast.success('Signed out successfully');
       navigate('/');

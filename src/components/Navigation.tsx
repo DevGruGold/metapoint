@@ -67,7 +67,10 @@ const Navigation = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={signOut}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await signOut();
+                }}
                 className="text-white hover:text-orange hover:bg-transparent"
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -121,8 +124,9 @@ const Navigation = () => {
             )}
             {user ? (
               <button
-                onClick={() => {
-                  signOut();
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await signOut();
                   setIsMenuOpen(false);
                 }}
                 className="block w-full text-left py-3 text-sm font-medium text-white/80 hover:text-orange transition-colors flex items-center gap-2"
