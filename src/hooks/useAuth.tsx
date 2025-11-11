@@ -40,9 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const lastCheckedUserId = useRef<string | null>(null);
 
   const checkAdminRole = async (userId: string): Promise<boolean> => {
-    // Prevent duplicate checks for same user
-    if (adminCheckInProgress.current || lastCheckedUserId.current === userId) {
-      console.log('[Auth] Skipping duplicate admin check for', userId);
+    // Only prevent duplicate checks if one is in progress
+    if (adminCheckInProgress.current) {
+      console.log('[Auth] Admin check already in progress, waiting...');
       return isAdmin;
     }
 
