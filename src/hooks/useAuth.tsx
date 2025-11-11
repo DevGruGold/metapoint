@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAdminRole = async (userId: string): Promise<boolean> => {
     try {
       console.log('[Auth] Checking admin role for user:', userId);
-      console.log('[Auth] Current auth.uid():', (await supabase.auth.getUser()).data.user?.id);
       
       const { data, error } = await supabase
         .from('user_roles')
@@ -51,13 +50,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('[Auth] Error checking admin role:', error);
-        console.error('[Auth] Error details:', JSON.stringify(error, null, 2));
         return false;
       }
       
-      console.log('[Auth] Query successful, data received:', data);
       const hasAdminRole = data && data.length > 0;
-      console.log('[Auth] Admin role check result:', hasAdminRole, 'Roles:', data);
+      console.log('[Auth] Admin role check result:', hasAdminRole, 'Data:', data);
       return hasAdminRole;
 
     } catch (error) {
@@ -68,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Update admin status with proper concurrency handling
   const updateAdminStatus = async (userId: string) => {
-    // Prevent concurrent checks
+    // Prevent concurrent checks with timeout
     if (adminCheckInProgress.current) {
       console.log('[Auth] Admin check already in progress, skipping...');
       return;
@@ -76,8 +73,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     adminCheckInProgress.current = true;
     
+    // Add timeout to prevent stuck flag
+    const timeout = setTimeout(() => {
+      console.warn('[Auth] Admin check timeout - resetting flag');
+      adminCheckInProgress.current = false;
+    }, 5000);
+    
     try {
       const isAdminUser = await checkAdminRole(userId);
+      console.log('[Auth] Setting isAdmin to:', isAdminUser);
       setIsAdmin(isAdminUser);
       setLoading(false);
       
@@ -86,7 +90,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin: isAdminUser,
         loading: false
       });
+    } catch (error) {
+      console.error('[Auth] Error updating admin status:', error);
+      setIsAdmin(false);
+      setLoading(false);
     } finally {
+      clearTimeout(timeout);
       adminCheckInProgress.current = false;
     }
   };
